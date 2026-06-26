@@ -1,0 +1,25 @@
+# deps & build
+node_modules/
+dist/
+build/
+.output/
+# capacitor / native
+ios/App/Pods/
+ios/App/build/
+ios/App/App/public/
+android/.gradle/
+android/app/build/
+android/app/src/main/assets/public/
+# env & secrets
+.env
+.env.*
+*.key
+*.p8
+*.p12
+*.mobileprovision
+# os & editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
