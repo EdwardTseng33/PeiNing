@@ -1,0 +1,43 @@
+# 🍎 Mac 接手指南 — 陪寧 PeiNing（從 Windows session 交棒）
+
+> 2026-06-26 蘇菲（Windows 端）建立。Edward 移到 Mac 用新 session 接續開發。
+> **Mac 新 session 第一件事：讀這份 ＋ `STATUS.md`。**
+
+---
+
+## 你現在在哪
+陪寧 PeiNing = 銀髮**個人 AI 專屬管家** App（核心族群長輩 60+、形象是 30-35 歲管家、子女買單）。
+今天（6/26）一天從「構想 → 定位 → 系統骨架 → 主幹程式庫 → 自架成本/授權」全部跑完。**這個 repo 就是主幹**，所有設計文件都在裡面（`STATUS.md` ＋ `docs/`）。
+
+## 一進來就讀（照順序）
+1. **`STATUS.md`** — 專案狀態總表（接力檔、最重要、先讀這個）
+2. `docs/解決方案與系統骨架-管家版-2026-06-26.md` — 架構（三顆腦 ＋ 一張臉）
+3. `docs/自架成本與PoC計畫-2026-06-26.md` — 成本 ＋ Ditto 測試計畫
+4. `docs/擬真avatar授權合規查核-2026-06-26.md` — 授權（Ditto = 乾淨、可商用）
+5. `README.md` / `docs/ARCHITECTURE.md` / `docs/ROADMAP.md` — 對外架構說明
+
+## Edward 在 Mac 要做的
+1. **Apple 開發者帳號**（上架必備、審核要幾天、越早辦越好）
+2. **開發環境**：Node.js ＋ Capacitor ＋ Xcode（出 iPhone 版要 Xcode、只有 Mac 有）
+3. **租大顯卡**（擬真測試用；Mac 本身跑不了那種測試、要租雲端 4090）→ 推 RunPod（按小時、跑完關掉、約幾百塊台幣）
+
+## 技術路線（已定、別重議）
+- **混合原生**：Capacitor 把網頁核心包成 iOS App（複用 `castle-voice-engine` 七成）
+- **全自架、不串第三方付費**（商業模式的根）
+- **avatar 兩軌**：擬真 4 個臉（2男2女、用 Ditto、待測試）＋ 2D 可愛/卡通（現可建）
+- **互動兩層**：App 沒開 → 推播；App 開 → 即時語音 ＋ 會說話的臉
+
+## 兩個最該先驗的（命脈）
+1. **推播 → 開 App 行為**：長輩會不會點推播、把 App 打開（產品邏輯靠這個成立）
+2. **擬真 Ditto 在租來的 4090 上跑得動嗎**（fps / 延遲 / 同時幾路）— 過了擬真才成立
+
+## 下一步（Mac 上開工順序）
+1. 裝環境（Node + Capacitor + Xcode）
+2. 把 `castle-voice-engine` 接進來、Capacitor 包成 iOS 殼
+3. **2D 軌先跑起來**（最小可跑版：能講話 ＋ 能設提醒）→ 上真機、釘語音延遲
+4. 擬真軌等 Ditto 測試結果再上
+
+## 注意
+- Windows 端原始檔在 `E:\Claude\智慧健康\陪寧-PeiNing\`（已全部複製進此 repo、此 repo 為往後主源）。
+- 城堡記憶 `project_peining_app.md` 有完整摘要（隨 castle-ai-system 同步、Mac 應該也讀得到）。
+- 名字「陪寧」已鎖（先用、真不行再改）；「安寧」聯想用文案定錨「安心」側。
