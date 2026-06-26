@@ -1,49 +1,81 @@
-# 串真引擎計畫：把 castle-voice-engine 接進陪寧 App
+# 串真引擎計畫：把 castle-voice-engine 接進陪寧 App（v2 · 已讀引擎、落實）
 
 > 把原型從「會點的外殼」變成「真的會聽會說會記得」。對應原型程式裡的 `[ENGINE]` 接點。
-> 2026-06-27 蘇菲。⚠️ 引擎確切 API/進入點需讀 `E:\Claude\castle-voice-engine` 的 STATUS / PRODUCT-PASSPORT 後逐一對接——本計畫是架構層的接線圖 + 順序。
+> v2 · 2026-06-27 蘇菲 · **已實際讀過 `E:\Claude\castle-voice-engine` 的 STATUS / PRODUCT-PASSPORT / 實際路由**，把 v1「API 待讀」補成具體。
 
 ---
 
-## 0. 現在原型是「假的」哪些（誠實盤點）
-| 功能 | 原型現況（mock） | 程式位置 |
-|---|---|---|
-| 聽（STT）| 瀏覽器 `SpeechRecognition`、英文中心 | `app.js` chatMic |
-| 想（對話）| 6 條 regex 罐頭回覆 `CHAT_RULES` | `app.js` chatReply |
-| 說（TTS）| 瀏覽器 `speechSynthesis`（非台語）| `app.js` say() |
-| 臉（avatar）| 貼一張 stock 照片 / 虛線示意框 | `index.html` `.ava-img` / `.avatar-frame` |
-| 記憶 | 無（每次重來）| — |
-| 感知 | 寫死的「6/26 晴 26°」 | `index.html` home-meta |
-| 推播 | 無 | — |
+## 0. 先講最重要的一個發現（誠實校正 v1）
 
-## 1. 引擎提供什麼（castle-voice-engine，七成複用）
-台語 ASR（Breeze）· GPT-Realtime-2（反射腦·即時語音）· Claude（深想腦）· TTS · 會說話的臉 + 嘴型同步 · 記憶連續性 · 主動開口（ambient）· 登入。**這些已存在、不必重造。**
+引擎 `castle-voice-engine` 的對外名 = **BeyondVoice**，本質是 **Edward 個人專屬的「語音版蘇菲」**（單人自用、跑在 Modal 雲端、現場 live），**不是一個商業產品**。
 
-## 2. 接線圖：三顆腦 + 一張臉 → 引擎
-- **反射腦**（聊聊 + 視訊對話）：拿掉瀏覽器 STT/TTS + regex → 接引擎即時語音（台語 STT → GPT-Realtime-2 → 台語 TTS）。`chatMic` 點下 = 開一段引擎語音 session、即時字幕走引擎回傳。
-- **管家腦**（感知 + 記憶）：① 記憶接引擎記憶層（記得上次、跨天）② 感知層新串：天氣/新聞/行事曆/重要日子 API，清晨背景跑、把「今天」備好 → 首頁問候帶出來（非寫死）。
-- **守護腦**（安全網）：危機關鍵詞偵測接引擎 + 守護邏輯 → 通知家人 / 轉介 1925 / 119。
-- **臉**：貼圖 → 引擎會說話的臉。**2D 軌先接**（現可建）→ 聊聊/首頁的臉會動會對嘴；視訊頁 = 即時 avatar。擬真軌等 Ditto PoC。
-
-## 3. 殼怎麼接（Capacitor）
-- 原生層（Capacitor plugin）：iOS 推播（App 沒開時找長輩）、麥克風權限、鎖屏/通知音、未來 HealthKit。
-- 網頁核心（現原型 + 引擎）：對話 UI + 引擎呼叫。
-- 引擎跑在哪：自架後端服務，App 端呼叫（即時語音走串流；非每分鐘付費第三方 = 商業模式的根）。
-
-## 4. 建議接線順序（先接最有感的命脈）
-1. **聊聊的真語音**（反射腦）= 第一個「真的會聽會說台語」——產品靈魂，先接。
-2. **記憶**（記得上次說的話）= 黏著關鍵，接第二。
-3. **2D 會動的臉** = 第一個「不是貼圖」的 avatar。
-4. **感知**（清晨備今天）+ **守護腦**安全網。
-5. **推播層**（原生）+ **擬真臉**（Ditto PoC 過後）。
-
-## 5. 先驗的兩個死穴（接之前/同時）
-① iOS 主動出聲推播穿透度 ② 擬真 Ditto 單卡 PoC（租 GPU）。詳 `規格書-完整-2026-06-27.md` §13。
-
-## 6. 待確認（讀引擎後補）
-- 引擎確切 API / 進入點 / 目前部署狀態（是否現成可呼叫的服務）。
-- 台語即時延遲實測（反射腦要快=命脈）。
-- 引擎語音 session 怎麼跟 Capacitor 麥克風/喇叭橋接。
+→ 對陪寧的意義（**這點以前沒講清楚、現在校正**）：
+- **架構與大量功能可以借**（語音管線、雲端部署法、感知/記憶那一整套 API 真的已經做好了）。
+- **但陪寧是「賣給很多長輩」的商業產品（多人）**，引擎是「Edward 一個人用」（單人）。所以陪寧要**自己一套部署**、不是直接共用 Edward 的個人引擎。
+- **臉（avatar）尤其不能照抄**：引擎內那幾個臉的方案（SoulX-FlashHead / Duix / MuseTalk）被引擎自己標成「個人自用可、對外商業 NO-GO」或「死路」。**陪寧的臉走我們今晚 PoC 過的 Ditto（Apache-2.0、可商用）**——這是兩條不同的路。
 
 ---
-*串引擎計畫 v1 · 2026-06-27 · 蘇菲 · 對接 `[ENGINE]` 接點 · 引擎細節待讀 castle-voice-engine 補實。*
+
+## 1. 引擎實際長怎樣（讀完程式庫的事實）
+
+- **部署**：Modal 雲端 + FastAPI，現場 live：`https://edwardt0303--castle-voice-engine-fastapi-app.modal.run/`。scale-to-zero（沒人用就睡、省錢）。
+- **語音主路**：gpt-realtime-2（即時語音、Phase 1 已 ship、live）。
+- **臉的探索**：breeze_poc 內有 MuseTalk（死路）/ SoulX-FlashHead（個人自用）等 PoC；**陪寧不走這條，走 Ditto**。
+- **台語**：`breeze_poc/app_breeze.py` = Breeze（台語）PoC 已存在 → 陪寧台語層有現成起點。
+- ⛔ **動臉的技術前必讀**：`castle-voice-engine/docs/voice-path-deadends-memo.md`（8 條已撞死路，憲法級）。
+
+## 2. 引擎「真的已經有」的 API（按陪寧三顆腦分）
+
+> 以下都是程式庫裡**真實存在的路由**（讀 code 確認）。確切的傳入/傳出格式，接的時候逐支再讀一次。
+
+**🧠 反射腦（即時對話）**
+- 即時語音（gpt-realtime-2，WebSocket，就是那個 live demo）
+- `POST /brain/ask_claude` — 深想（Claude）
+
+**🧠 管家腦 · 感知（清晨備今天）— ⭐ 大半已做好**
+- `POST /brain/morning_brief`（清晨總整理）· `POST /brain/get_weather` · `POST /brain/get_time_context` · `POST /brain/news_brief`
+- `POST /perception/update` · `POST /brain/get_perception`（感知狀態存取）
+
+**🧠 管家腦 · 記憶（深度認識這個人）— ⭐ 大半已做好**
+- `POST /memory/shared/set` · `GET /memory/shared/get/{key}` · `GET /memory/shared/list`（共用記憶存取）
+- `POST /brain/save_interest`（記喜好）
+- `POST /brain/start_interview` · `/brain/log_interview_insight` · `/brain/end_interview`（**深度訪談 = 慢慢認識這個人、挖生命故事**，正好對應陪寧北極星「記得這個人」）
+- `POST /brain/get_contact_history` · `/brain/save_contact_meeting`（關係/互動記憶）
+
+**🤝 派工 / 工具**：`GET /dispatch/tools` · `POST /dispatch`
+**📷 鏡頭多模態（Phase 3）**：`/camera/*` `/vision/*` — **陪寧 v1 不做攝影機對內**（北極星 §5）→ 這組先略過。
+
+## 3. 陪寧要做的三件分類（借 / 加 / 不照抄）
+
+**✅ 借（直接對應、省最多）**
+- 雲端部署法（Modal FastAPI + scale-to-zero）
+- 即時語音（gpt-realtime-2 整合）= 反射腦
+- 感知整套（morning_brief / weather / perception）= 管家腦感知層
+- 記憶整套（memory/shared + interview + interest）= 管家腦記憶層
+- 認得本人（引擎用 SpeechBrain 認 Edward → 陪寧認長輩）、隱私遮罩（spaCy）
+
+**➕ 加（引擎沒有、陪寧的命脈）**
+- **台語 ASR + TTS**（引擎是華語/英語蘇菲；台語是陪寧護城河 → 接 Breeze Taigi，起點在 breeze_poc）
+- **多人**（一個引擎服務很多長輩，各自記憶分開 → 記憶要按「哪位長輩」分艙，引擎現在是單人共用）
+- **iOS 推播**（App 沒開時找長輩 = 命脈 → Capacitor 原生層）
+- **守護腦**（危機 → 通知家人 / 1925 / 119）
+- **Ditto 臉服務化**（雲端 GPU 常駐 Ditto、App 呼叫 → 今晚 PoC 過、待 TRT 即時）
+
+**🚫 不照抄**
+- 引擎的臉（SoulX/Duix/MuseTalk）= Track-A/死路 → 陪寧用 Ditto
+- 單人共用記憶 → 陪寧要多人分艙
+
+## 4. 接線順序（先接最有感的命脈）
+1. **聊聊的真語音**（反射腦 gpt-realtime-2）= 第一個「真的會聽會說」——產品靈魂，先接。台語層同步接 Breeze。
+2. **記憶**（記得上次）= 黏著關鍵 → 接 `/memory/shared` + interview，加「按長輩分艙」。
+3. **感知**（清晨備今天）→ 接 `/brain/morning_brief` 那組，首頁問候帶出來（非寫死）。
+4. **2D 會動的臉** →（Ditto 擬真臉 PoC/TRT 過後再上）。
+5. **守護腦** + **推播層**（原生）。
+
+## 5. 待 Edward / Mac 拍板（接之前要定）
+1. **陪寧自己一套 Modal 部署 vs 共用引擎** → 建議**自己一套**（商業多人 ≠ 個人單人；也避免動到 Edward 自用引擎）。
+2. **台語即時延遲**：反射腦要快 = 命脈，Breeze 接上後實測。
+3. **引擎那套腦的 license**：gpt-realtime-2 走 OpenAI API（用量計費）；陪寧商業上線前，沙利曼要過一次 license/成本帳（這跟「全自架不付每分鐘費」的初衷要對齊——即時語音這塊是否自架 vs 用 OpenAI，要算清楚）。
+
+---
+*串引擎計畫 v2 · 2026-06-27 · 蘇菲 · 已讀引擎程式庫落實 · 取代 v1「API 待讀」。動臉技術前必讀引擎 deadends-memo。*
