@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#3AA8A0" />
+  <title>PeiNing 陪寧 · 家人</title>
+  <link rel="icon" type="image/png" href="icons/peining-app-icon-source-rounded-transparent-clean-256.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/styles.css" />
+  <style>
+    /* 子女端專屬微調（其餘沿用 styles.css 設計系統） */
+    .fv-role { display:inline-flex; align-items:center; gap:6px; background:var(--mint); color:var(--teal-dd); font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:999px; }
+    .relay-card { background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:18px; margin-bottom:16px; }
+    .relay-head { display:flex; align-items:center; gap:10px; margin-bottom:12px; font-size:17px; font-weight:700; color:var(--ink); }
+    .relay-head .rh-ico { width:40px; height:40px; border-radius:13px; background:var(--mint); display:grid; place-items:center; color:var(--teal-d); flex-shrink:0; }
+    .relay-input { width:100%; border:1.5px solid var(--line); border-radius:14px; padding:13px 14px; font-family:var(--sans); font-size:16px; color:var(--ink); resize:none; background:#fff; box-sizing:border-box; }
+    .relay-input:focus { outline:none; border-color:var(--teal); }
+    .relay-send { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:15px; margin-top:12px; border:none; border-radius:var(--radius-sm); background:linear-gradient(135deg,var(--teal),var(--teal-d)); color:#fff; font-family:var(--display); font-weight:700; font-size:17px; box-shadow:0 12px 24px -12px rgba(58,168,160,.7); cursor:pointer; }
+    .relay-hint { font-size:13px; color:var(--muted); margin-top:9px; text-align:center; }
+    .relay-sent { display:none; align-items:center; gap:8px; justify-content:center; color:var(--teal-d); font-weight:600; font-size:15px; margin-top:12px; }
+    .relay-sent.show { display:flex; }
+    .tl-card { background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow-sm); overflow:hidden; }
+    .tl-item { display:flex; gap:14px; padding:15px 18px; }
+    .tl-item + .tl-item { border-top:1px solid var(--line); }
+    .tl-ico { width:40px; height:40px; border-radius:13px; display:grid; place-items:center; flex-shrink:0; color:var(--teal-d); background:var(--mint); }
+    .tl-ico.coral { background:#F5E6D4; color:var(--coral); }
+    .tl-ico.gold { background:#F6EAD0; color:#B98A2E; }
+    .tl-body { flex:1; }
+    .tl-text { font-size:15.5px; color:var(--ink); line-height:1.5; }
+    .tl-time { font-size:12.5px; color:var(--muted); margin-top:3px; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <div class="status-bar"><span>9:41</span><span class="notch"></span><span class="sb-icons">
+    <svg class="ic" viewBox="0 0 24 24"><path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8"/></svg>
+    <svg class="ic" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14 0M8.5 16.4a6 6 0 0 1 7 0M12 20h.01"/></svg>
+    <svg class="ic" viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+  </span></div>
+
+  <section class="screen active">
+    <div class="pad">
+
+      <div class="home-top">
+        <span class="brand"><svg class="ic logo-wave" viewBox="0 0 24 24"><path d="M8 8a5 5 0 0 1 0 8M11.5 5a9 9 0 0 1 0 14"/></svg><span class="pai">Pei</span><span class="ning">Ning</span></span>
+        <span class="fv-role"><svg class="ic" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>家人視角</span>
+      </div>
+
+      <div class="page-head">
+        <p class="page-kicker">媽媽 · 美華的視角</p>
+        <h1 class="page-title">媽媽今天，安好</h1>
+        <p class="page-sub">陳奶奶 · 72 歲 · 台南 · 寧寧顧著</p>
+      </div>
+
+      <!-- 安全網：一眼安心 -->
+      <div class="guard-strip">
+        <svg class="ic" viewBox="0 0 24 24" style="color:var(--teal-d)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        <div><div style="font-weight:700;color:var(--ink);font-size:16px">一切正常，沒有異常</div><div style="font-size:13px;color:var(--ink-2);margin-top:2px">作息規律、沒有跌倒或求救 · 有狀況寧寧第一時間通知你</div></div>
+      </div>
+
+      <!-- 媽媽今天：四格狀態 -->
+      <div class="sec-head"><div><p class="sec-kicker">TODAY</p><h2 style="font-size:18px;font-weight:700;color:var(--ink)">媽媽今天</h2></div></div>
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <svg class="ic" viewBox="0 0 24 24" style="color:var(--teal-d)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <div style="font-size:22px;font-weight:800;color:var(--ink);margin-top:8px;font-family:var(--display)">聊了 3 次</div>
+          <div style="font-size:13.5px;color:var(--muted);margin-top:2px">早安 · 午餐 · 散步回來</div>
+        </div>
+        <div class="stat-tile">
+          <svg class="ic" viewBox="0 0 24 24" style="color:var(--teal-d)"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7z"/><path d="m8.5 8.5 7 7"/></svg>
+          <div style="font-size:22px;font-weight:800;color:var(--ink);margin-top:8px;font-family:var(--display)">藥吃了 ✓</div>
+          <div style="font-size:13.5px;color:var(--teal-d);margin-top:2px;font-weight:600">連續 6 天準時</div>
+        </div>
+        <div class="stat-tile">
+          <svg class="ic" viewBox="0 0 24 24" style="color:var(--coral)"><path d="M19 14c1.5-1.5 3-3.4 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.1 1.5 4 3 5.5l7 7z"/></svg>
+          <div style="font-size:22px;font-weight:800;color:var(--ink);margin-top:8px;font-family:var(--display)">心情好</div>
+          <div style="font-size:13.5px;color:var(--muted);margin-top:2px">提到孫子、笑了</div>
+        </div>
+        <div class="stat-tile">
+          <svg class="ic" viewBox="0 0 24 24" style="color:var(--teal-d)"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <div style="font-size:22px;font-weight:800;color:var(--ink);margin-top:8px;font-family:var(--display)">走了 2,400 步</div>
+          <div style="font-size:13.5px;color:var(--muted);margin-top:2px">下午到公園走走</div>
+        </div>
+      </div>
+
+      <!-- 傳話：寧寧念給媽媽聽（繞開長輩讀字/打字） -->
+      <div class="relay-card">
+        <div class="relay-head"><span class="rh-ico"><svg class="ic" viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></span>傳句話給媽媽</div>
+        <textarea class="relay-input" id="relayInput" rows="2" placeholder="打字就好，寧寧會用台語念給媽媽聽——「媽，我下班去看你」"></textarea>
+        <button class="relay-send" id="relaySend"><svg class="ic" viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>請寧寧念給媽媽</button>
+        <div class="relay-hint">媽媽不用讀字、不用操作 — 寧寧會親口念給她聽</div>
+        <div class="relay-sent" id="relaySent"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>寧寧收到了，等媽媽方便就念給她聽</div>
+      </div>
+
+      <!-- 媽媽這週 + 一鍵鼓勵（親情循環） -->
+      <div class="week-card">
+        <p class="sec-kicker" style="color:var(--gold)">媽媽這週</p>
+        <h3 style="font-size:20px;font-weight:800;color:var(--ink);margin:2px 0 14px">很棒，越來越穩</h3>
+        <div class="wk-stats">
+          <div class="wk-stat"><div style="font-size:24px;font-weight:800;color:var(--teal-d);font-family:var(--display)">6</div><div style="font-size:12.5px;color:var(--ink-2);margin-top:2px">天準時吃藥</div></div>
+          <div class="wk-stat"><div style="font-size:24px;font-weight:800;color:var(--teal-d);font-family:var(--display)">4</div><div style="font-size:12.5px;color:var(--ink-2);margin-top:2px">次出門散步</div></div>
+          <div class="wk-stat"><div style="font-size:24px;font-weight:800;color:var(--teal-d);font-family:var(--display)">12</div><div style="font-size:12.5px;color:var(--ink-2);margin-top:2px">次開口聊天</div></div>
+        </div>
+        <button class="cheer-btn" id="cheerBtn"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"/></svg>幫媽媽按個讚 · 寧寧會轉達</button>
+        <div class="relay-sent" id="cheerSent" style="margin-top:14px"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>讚送出了，寧寧會跟媽媽說「美華幫你按了讚，說你好棒」</div>
+      </div>
+
+      <!-- 最近動態 -->
+      <div class="sec-head"><div><p class="sec-kicker">最近</p><h2 style="font-size:18px;font-weight:700;color:var(--ink)">媽媽的一天</h2></div></div>
+      <div class="tl-card">
+        <div class="tl-item"><span class="tl-ico"><svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span><div class="tl-body"><div class="tl-text">跟寧寧聊了散步看到的花，心情很好</div><div class="tl-time">下午 3:20</div></div></div>
+        <div class="tl-item"><span class="tl-ico gold"><svg class="ic" viewBox="0 0 24 24"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7z"/><path d="m8.5 8.5 7 7"/></svg></span><div class="tl-body"><div class="tl-text">中午的血壓藥按時吃了 · 連續第 6 天</div><div class="tl-time">中午 12:05</div></div></div>
+        <div class="tl-item"><span class="tl-ico"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14 0M8.5 16.4a6 6 0 0 1 7 0M12 20h.01"/></svg></span><div class="tl-body"><div class="tl-text">血壓量了 128/79，平穩（來自 Apple 健康）</div><div class="tl-time">早上 8:30</div></div></div>
+      </div>
+
+      <button class="fam-call-btn" id="videoBtn" style="margin-top:18px"><svg class="ic" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>視訊看看媽媽</button>
+      <div style="height:30px"></div>
+
+    </div>
+  </section>
+</div>
+
+<script>
+  /* 子女端原型互動（mock；正式版接雲端傳話層 + 推播） · [ENGINE] */
+  const $ = (s) => document.querySelector(s);
+  function flash(el){ if(el){ el.classList.add('show'); } }
+  $('#relaySend').addEventListener('click', () => {
+    const t = $('#relayInput').value.trim();
+    if(!t){ $('#relayInput').focus(); return; }
+    flash($('#relaySent'));
+    $('#relaySend').textContent = '已送給寧寧';
+    $('#relaySend').style.opacity = '.7';
+  });
+  $('#cheerBtn').addEventListener('click', () => {
+    flash($('#cheerSent'));
+    const b = $('#cheerBtn'); b.style.opacity = '.65'; b.textContent = '讚已送出 ❤';
+  });
+  $('#videoBtn').addEventListener('click', () => {
+    alert('（原型）正式版：撥給媽媽端、寧寧先跟她說「美華要跟你視訊，接起來看看」。');
+  });
+</script>
+</body>
+</html>
