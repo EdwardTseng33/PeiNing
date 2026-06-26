@@ -5,7 +5,7 @@
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
-const OVERLAYS = ['call', 'med'];
+const OVERLAYS = ['call', 'med', 'chat'];
 let callTimer = null;
 
 function showView(id) {
@@ -140,6 +140,35 @@ function init() {
   // 家庭記錄簿
   if ($('#bookBtn')) $('#bookBtn').addEventListener('click', () => { $('#viewAll').classList.remove('active'); $('#viewPerson').classList.remove('active'); $('#viewBook').classList.add('active'); });
   if ($('#bookBack')) $('#bookBack').addEventListener('click', () => { $('#viewBook').classList.remove('active'); $('#viewAll').classList.add('active'); });
+
+  // 聊聊：日常語音陪聊 · [ENGINE] 正式版換台語 STT/TTS + 反射腦
+  const SR2 = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let chatRec = null, chatOn = false;
+  const CHAT_RULES = [
+    [/痛|痠|不舒服|頭暈/, '聽到你不太舒服，我有點擔心。先坐下歇會兒，需要的話我幫你通知美華。'],
+    [/累|睡不|失眠/, '辛苦了，累就歇著、不用硬撐，我在這陪你。'],
+    [/孫|想.*他|想.*她|寂寞|一個人/, '想家人了是吧？要不要我提醒他們今晚打給你？'],
+    [/吃|飯|餓|藥/, '好，吃飯吃藥都別忘了，到時間我會叫你。'],
+    [/天氣|冷|熱|下雨/, '記得隨天氣加減衣服，別著涼了。'],
+    [/謝|你真好|感謝/, '不用謝，陪著你是我最想做的事。'],
+  ];
+  function chatReply(t) { for (const [re, r] of CHAT_RULES) if (re.test(t.toLowerCase())) return r; return '我聽見了，你慢慢說，我都在。'; }
+  function chatHandle(t) {
+    if ($('#chatCaption')) $('#chatCaption').textContent = `你說：「${t}」`;
+    setTimeout(() => { const r = chatReply(t); if ($('#chatCaption')) $('#chatCaption').textContent = r; say(r); }, 600);
+  }
+  const chatMic = $('#chatMic');
+  if (chatMic) chatMic.addEventListener('click', () => {
+    if (!SR2) { const s = prompt('（這個瀏覽器先用打字，正式版用台語語音）跟寧寧說什麼？'); if (s) chatHandle(s); return; }
+    if (chatOn) { chatRec && chatRec.stop(); return; }
+    chatRec = new SR2(); chatRec.lang = 'zh-TW'; chatRec.interimResults = false;
+    chatRec.onstart = () => { chatOn = true; chatMic.classList.add('recording'); if ($('#chatCaption')) $('#chatCaption').textContent = '嗯，我聽著呢…'; if ($('#chatHint')) $('#chatHint').textContent = '再點一下結束'; };
+    chatRec.onresult = e => chatHandle(e.results[0][0].transcript);
+    chatRec.onend = () => { chatOn = false; chatMic.classList.remove('recording'); if ($('#chatHint')) $('#chatHint').textContent = '點麥克風，跟我說說話'; };
+    chatRec.onerror = chatRec.onend;
+    chatRec.start();
+  });
+  if ($('#chatEnd')) $('#chatEnd').addEventListener('click', () => showView('home'));
 
   if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => {};
 }
