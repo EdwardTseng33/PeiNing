@@ -112,37 +112,93 @@
   <section class="screen" id="family">
     <div class="status-bar"><span>9:41</span><span class="notch"></span><span class="sb-icons"><svg class="ic" viewBox="0 0 24 24"><path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8"/></svg><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14 0M8.5 16.4a6 6 0 0 1 7 0M12 20h.01"/></svg><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg></span></div>
     <div class="pad">
-      <div class="page-head"><p class="page-kicker">Family</p><h1 class="page-title">我的家人</h1><p class="page-sub">他們都在，隨時找得到</p></div>
-      <div class="fam-members">
-        <div class="fam-member"><div class="fm-av"><img class="ava-img" src="https://randomuser.me/api/portraits/women/68.jpg" alt=""></div><div class="fm-name">美華</div><div class="fm-rel">女兒</div></div>
-        <div class="fam-member"><div class="fm-av"><img class="ava-img" src="https://randomuser.me/api/portraits/men/52.jpg" alt=""></div><div class="fm-name">志明</div><div class="fm-rel">兒子</div></div>
-        <div class="fam-member"><div class="fm-av"><img class="ava-img" src="https://randomuser.me/api/portraits/men/85.jpg" alt=""></div><div class="fm-name">小寶</div><div class="fm-rel">孫子</div></div>
-        <div class="fam-member"><div class="fm-av add"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div><div class="fm-name">邀請</div><div class="fm-rel">家人</div></div>
+      <div class="page-head"><p class="page-kicker">Family</p><h1 class="page-title">全家健康圈</h1><p class="page-sub">點頭像看每個人，互相關心</p></div>
+
+      <div class="fam-switch" id="famSwitch">
+        <button class="fam-switch-item active" data-person="all"><span class="fs-av all"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg></span><span class="fs-name">全家</span></button>
+        <button class="fam-switch-item" data-person="阿嬤" data-rel="媽媽 · 72 歲" data-av="https://randomuser.me/api/portraits/women/65.jpg"><span class="fs-av"><img src="https://randomuser.me/api/portraits/women/65.jpg"></span><span class="fs-name">阿嬤</span></button>
+        <button class="fam-switch-item" data-person="美華" data-rel="女兒 · 45 歲" data-av="https://randomuser.me/api/portraits/women/68.jpg"><span class="fs-av"><img src="https://randomuser.me/api/portraits/women/68.jpg"></span><span class="fs-name">美華</span></button>
+        <button class="fam-switch-item" data-person="志明" data-rel="兒子 · 42 歲" data-av="https://randomuser.me/api/portraits/men/52.jpg"><span class="fs-av"><img src="https://randomuser.me/api/portraits/men/52.jpg"></span><span class="fs-name">志明</span></button>
+        <button class="fam-switch-item" data-person="小寶" data-rel="孫子 · 12 歲" data-av="https://randomuser.me/api/portraits/men/85.jpg"><span class="fs-av"><img src="https://randomuser.me/api/portraits/men/85.jpg"></span><span class="fs-name">小寶</span></button>
+        <button class="fam-switch-item" data-person="invite"><span class="fs-av all"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span class="fs-name">邀請</span></button>
       </div>
 
-      <div class="quest-card">
-        <div class="qc-kicker"><svg class="ic" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>這週家庭任務</div>
-        <div class="qc-goal">全家一起走 30,000 步</div>
-        <div class="qc-bar"><i></i></div>
-        <div class="qc-num">21,500 / 30,000 步 · 還差一點點</div>
-        <div class="qc-foot">
-          <div class="qc-members">
-            <div class="qc-mem"><img src="https://randomuser.me/api/portraits/women/65.jpg" alt=""></div>
-            <div class="qc-mem"><img src="https://randomuser.me/api/portraits/women/68.jpg" alt=""></div>
-            <div class="qc-mem"><img src="https://randomuser.me/api/portraits/men/52.jpg" alt=""></div>
-            <div class="qc-mem"><img src="https://randomuser.me/api/portraits/men/85.jpg" alt=""></div>
+      <!-- 全家總覽 -->
+      <div class="fam-view active" id="viewAll">
+        <div class="sec-head"><div><p class="sec-kicker">Together</p><h2>家庭挑戰</h2></div></div>
+        <div class="chal-actions">
+          <button class="chal-act new" id="newChalBtn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>發起挑戰</button>
+          <button class="chal-act book" id="bookBtn"><svg class="ic" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5z"/></svg>家庭記錄簿</button>
+        </div>
+        <div class="quest-card">
+          <div class="qc-kicker"><svg class="ic" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>本週 · 一起走路</div>
+          <div class="qc-goal">全家一起走 30,000 步</div>
+          <div class="qc-bar"><i></i></div>
+          <div class="qc-num">21,500 / 30,000 步 · 還差一點點</div>
+        </div>
+        <div class="quest-card" style="background:linear-gradient(140deg,#5E7FB6,#475f8c)">
+          <div class="qc-kicker"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>本週 · 早點睡</div>
+          <div class="qc-goal">全家早睡 5 個晚上</div>
+          <div class="qc-bar"><i style="width:60%"></i></div>
+          <div class="qc-num">3 / 5 晚 · 加油，再撐兩天</div>
+        </div>
+
+        <div class="sec-head"><div><p class="sec-kicker">Everyone</p><h2>全家狀態</h2></div></div>
+        <div class="health-list" id="healthList">
+          <div class="health-row" data-person="阿嬤" data-rel="媽媽 · 72 歲" data-av="https://randomuser.me/api/portraits/women/65.jpg">
+            <span class="hr-av"><img src="https://randomuser.me/api/portraits/women/65.jpg"></span>
+            <div class="hr-info"><div class="hr-name">阿嬤</div><div class="hr-state">今天平穩 · 藥已吃 2/3</div></div>
+            <div class="hr-lights"><span class="lt"><svg class="ic" viewBox="0 0 24 24"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/></svg></span><span class="lt warn"><svg class="ic" viewBox="0 0 24 24"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7z"/><path d="M8.5 8.5l7 7"/></svg></span></div>
           </div>
-          <div class="qc-cheer">一起幫阿嬤加油 💪</div>
+          <div class="health-row" data-person="美華" data-rel="女兒 · 45 歲" data-av="https://randomuser.me/api/portraits/women/68.jpg">
+            <span class="hr-av"><img src="https://randomuser.me/api/portraits/women/68.jpg"></span>
+            <div class="hr-info"><div class="hr-name">美華</div><div class="hr-state">活動量達標 · 睡眠偏少</div></div>
+            <div class="hr-lights"><span class="lt"><svg class="ic" viewBox="0 0 24 24"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/></svg></span><span class="lt warn"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></span></div>
+          </div>
+          <div class="health-row" data-person="志明" data-rel="兒子 · 42 歲" data-av="https://randomuser.me/api/portraits/men/52.jpg">
+            <span class="hr-av"><img src="https://randomuser.me/api/portraits/men/52.jpg"></span>
+            <div class="hr-info"><div class="hr-name">志明</div><div class="hr-state">這週很規律</div></div>
+            <div class="hr-lights"><span class="lt"><svg class="ic" viewBox="0 0 24 24"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/></svg></span><span class="lt"><svg class="ic" viewBox="0 0 24 24"><path d="M4 16v-2.4c0-2.1-1-3.1-1-5.6 0-2.7 1.5-6 4.5-6C9.4 2 10 3.8 10 5.5c0 3.1-2 5.7-2 8.7V16a2 2 0 1 1-4 0Z"/><path d="M20 20v-2.4c0-2.1 1-3.1 1-5.6 0-2.7-1.5-6-4.5-6C14.6 6 14 7.8 14 9.5c0 3.1 2 5.7 2 8.7V20a2 2 0 1 0 4 0Z"/></svg></span></div>
+          </div>
+          <div class="health-row" data-person="小寶" data-rel="孫子 · 12 歲" data-av="https://randomuser.me/api/portraits/men/85.jpg">
+            <span class="hr-av"><img src="https://randomuser.me/api/portraits/men/85.jpg"></span>
+            <div class="hr-info"><div class="hr-name">小寶</div><div class="hr-state">活蹦亂跳</div></div>
+            <div class="hr-lights"><span class="lt"><svg class="ic" viewBox="0 0 24 24"><path d="M4 16v-2.4c0-2.1-1-3.1-1-5.6 0-2.7 1.5-6 4.5-6C9.4 2 10 3.8 10 5.5c0 3.1-2 5.7-2 8.7V16a2 2 0 1 1-4 0Z"/><path d="M20 20v-2.4c0-2.1 1-3.1 1-5.6 0-2.7-1.5-6-4.5-6C14.6 6 14 7.8 14 9.5c0 3.1 2 5.7 2 8.7V20a2 2 0 1 0 4 0Z"/></svg></span></div>
+          </div>
         </div>
       </div>
 
-      <div class="week-card">
-        <div class="wk-head"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.5 12.9 17 22l-5-3-5 3 1.5-9.1"/></svg>媽媽這週很棒</div>
-        <div class="wk-stats">
-          <div class="wk-stat"><div class="wk-num">6 天</div><div class="wk-lbl">準時吃藥</div></div>
-          <div class="wk-stat"><div class="wk-num">4 次</div><div class="wk-lbl">出門散步</div></div>
-          <div class="wk-stat"><div class="wk-num">平穩</div><div class="wk-lbl">情緒</div></div>
+      <!-- 個人健康（點某人後） -->
+      <div class="fam-view" id="viewPerson">
+        <div class="person-top"><span class="pt-av"><img id="ptAv" src=""></span><div><div class="pt-name" id="ptName">—</div><div class="pt-rel" id="ptRel">—</div></div></div>
+        <div class="person-grid">
+          <div class="stat-tile"><span class="st-ico"><svg class="ic" viewBox="0 0 24 24"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/><path d="M3.2 12H9l.5-1 2 4.5 2-7 1.5 3.5h5.3"/></svg></span><div class="st-val">128/82</div><div class="st-label">血壓</div></div>
+          <div class="stat-tile"><span class="st-ico"><svg class="ic" viewBox="0 0 24 24"><path d="M4 16v-2.4c0-2.1-1-3.1-1-5.6 0-2.7 1.5-6 4.5-6C9.4 2 10 3.8 10 5.5c0 3.1-2 5.7-2 8.7V16a2 2 0 1 1-4 0Z"/><path d="M20 20v-2.4c0-2.1 1-3.1 1-5.6 0-2.7-1.5-6-4.5-6C14.6 6 14 7.8 14 9.5c0 3.1 2 5.7 2 8.7V20a2 2 0 1 0 4 0Z"/></svg></span><div class="st-val">6,200<small> 步</small></div><div class="st-label">今日活動</div></div>
+          <div class="stat-tile"><span class="st-ico"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></span><div class="st-val">7.5<small> 小時</small></div><div class="st-label">昨晚睡眠</div></div>
+          <div class="stat-tile"><span class="st-ico"><svg class="ic" viewBox="0 0 24 24"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7z"/><path d="M8.5 8.5l7 7"/></svg></span><div class="st-val">2<small>/3</small></div><div class="st-label">今天用藥</div></div>
         </div>
+        <div class="trend-card">
+          <div class="trend-head"><h3>健康趨勢</h3><div class="trend-tabs" id="trendTabs"><button class="active" data-range="week">本週</button><button data-range="month">本月</button></div></div>
+          <div class="trend-bars" id="trendBars">
+            <div class="tb"><i style="height:55%"></i><span>一</span></div>
+            <div class="tb"><i style="height:72%"></i><span>二</span></div>
+            <div class="tb"><i style="height:45%"></i><span>三</span></div>
+            <div class="tb"><i style="height:80%"></i><span>四</span></div>
+            <div class="tb"><i style="height:62%"></i><span>五</span></div>
+            <div class="tb"><i style="height:90%"></i><span>六</span></div>
+            <div class="tb"><i style="height:75%"></i><span>日</span></div>
+          </div>
+          <div class="trend-note">這週<b>活動量穩定</b>、睡眠比上週好；用藥準時率 <b>92%</b>。</div>
+        </div>
+
+        <div class="sec-head"><div><p class="sec-kicker">Achievements</p><h2>成就徽章</h2></div></div>
+        <div class="badge-wall">
+          <div class="badge"><div class="bd-medal">🏅</div><div class="bd-name">連續服藥<br>30 天</div></div>
+          <div class="badge"><div class="bd-medal">🚶</div><div class="bd-name">走路挑戰<br>達成 ×4</div></div>
+          <div class="badge"><div class="bd-medal">👵</div><div class="bd-name">長輩之星</div></div>
+          <div class="badge"><div class="bd-medal locked">🌙</div><div class="bd-name">早睡達人<br>未解鎖</div></div>
+        </div>
+
         <div class="react-row" id="reactRow">
           <button class="react-btn" data-react="按了讚"><span class="re-emoji">👍</span>按讚</button>
           <button class="react-btn" data-react="送上愛心"><span class="re-emoji">💛</span>愛心</button>
@@ -151,11 +207,48 @@
         </div>
       </div>
 
-      <div class="msg-card">
-        <div class="msg-head"><div class="mh-av"><img class="ava-img" src="https://randomuser.me/api/portraits/women/68.jpg" alt=""></div><div class="mh-name">美華</div><div class="mh-time">剛剛</div></div>
-        <div class="msg-body">媽，記得吃血壓藥，週末回去看你！想吃什麼我買過去 💛</div>
+      <!-- 家庭記錄簿 -->
+      <div class="fam-view" id="viewBook">
+        <button class="back-btn" id="bookBack"><svg class="ic" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>回全家</button>
+        <div class="page-head"><p class="page-kicker">Record Book</p><h1 class="page-title">家庭記錄簿</h1><p class="page-sub">一起做過的事，都記在這</p></div>
+        <div class="book-entry">
+          <div class="be-head"><div class="be-title"><span class="be-medal">🏅</span>一起走路 30,000 步</div><div class="be-date">6/19</div></div>
+          <div class="be-foot"><span class="be-result"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>達成！全家慶祝</span><div class="be-members"><span class="be-mem"><img src="https://randomuser.me/api/portraits/women/65.jpg"></span><span class="be-mem"><img src="https://randomuser.me/api/portraits/women/68.jpg"></span><span class="be-mem"><img src="https://randomuser.me/api/portraits/men/85.jpg"></span></div></div>
+        </div>
+        <div class="book-entry">
+          <div class="be-head"><div class="be-title"><span class="be-medal">🌙</span>早睡一週</div><div class="be-date">6/12</div></div>
+          <div class="be-foot"><span class="be-result"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>達成！</span><div class="be-members"><span class="be-mem"><img src="https://randomuser.me/api/portraits/women/65.jpg"></span><span class="be-mem"><img src="https://randomuser.me/api/portraits/women/68.jpg"></span><span class="be-mem"><img src="https://randomuser.me/api/portraits/men/52.jpg"></span></div></div>
+        </div>
+        <div class="book-entry">
+          <div class="be-head"><div class="be-title"><span class="be-medal">💧</span>每天喝水</div><div class="be-date">6/5</div></div>
+          <div class="be-foot"><span class="be-result">參加過 · 差一點點，下次再來</span><div class="be-members"><span class="be-mem"><img src="https://randomuser.me/api/portraits/women/65.jpg"></span><span class="be-mem"><img src="https://randomuser.me/api/portraits/women/68.jpg"></span></div></div>
+        </div>
       </div>
-      <button class="fam-call-btn" id="askCall"><svg class="ic" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2 4.2 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>請寧寧提醒他們打給我</button>
+
+      <!-- 發起挑戰 面板 -->
+      <div class="modal-mask" id="chalModal">
+        <div class="modal">
+          <div class="modal-grab"></div>
+          <h2>發起新挑戰</h2>
+          <p class="modal-sub">選一個挑戰，找想一起的人——不勉強誰</p>
+          <div class="field-label">挑戰類型</div>
+          <div class="chal-types">
+            <button class="chal-type active"><svg class="ic" viewBox="0 0 24 24"><path d="M4 16v-2.4c0-2.1-1-3.1-1-5.6 0-2.7 1.5-6 4.5-6C9.4 2 10 3.8 10 5.5c0 3.1-2 5.7-2 8.7V16a2 2 0 1 1-4 0Z"/><path d="M20 20v-2.4c0-2.1 1-3.1 1-5.6 0-2.7-1.5-6-4.5-6C14.6 6 14 7.8 14 9.5c0 3.1 2 5.7 2 8.7V20a2 2 0 1 0 4 0Z"/></svg>一起走路</button>
+            <button class="chal-type"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>早點睡</button>
+            <button class="chal-type"><svg class="ic" viewBox="0 0 24 24"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/></svg>量血壓</button>
+            <button class="chal-type"><svg class="ic" viewBox="0 0 24 24"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7z"/><path d="M8.5 8.5l7 7"/></svg>用藥全勤</button>
+          </div>
+          <div class="field-label">找誰一起（可以不選全部）</div>
+          <div class="invite-list" id="inviteList">
+            <div class="invite-item on" data-step="3000"><span class="iv-av"><img src="https://randomuser.me/api/portraits/women/65.jpg"></span><div class="iv-name">阿嬤<div class="iv-sub">份額 3,000 步（依能力）</div></div><span class="iv-check"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span></div>
+            <div class="invite-item on" data-step="8000"><span class="iv-av"><img src="https://randomuser.me/api/portraits/women/68.jpg"></span><div class="iv-name">美華<div class="iv-sub">份額 8,000 步</div></div><span class="iv-check"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span></div>
+            <div class="invite-item" data-step="8000"><span class="iv-av"><img src="https://randomuser.me/api/portraits/men/52.jpg"></span><div class="iv-name">志明<div class="iv-sub">份額 8,000 步</div></div><span class="iv-check"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span></div>
+            <div class="invite-item on" data-step="6000"><span class="iv-av"><img src="https://randomuser.me/api/portraits/men/85.jpg"></span><div class="iv-name">小寶<div class="iv-sub">份額 6,000 步</div></div><span class="iv-check"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span></div>
+          </div>
+          <div class="goal-box">這次 <b id="goalN">3</b> 人一起，目標 <b id="goalSum">17,000</b> 步——難度跟著人數和每個人的能力算，公平、誰都不拖累誰。</div>
+          <button class="modal-btn" id="startChalBtn">送出邀請，開始挑戰</button>
+        </div>
+      </div>
     </div>
   </section>
 
