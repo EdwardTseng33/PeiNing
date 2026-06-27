@@ -80,8 +80,33 @@ def remember(history_text):
     return []
 
 
+def open_chat(char="寧寧"):
+    """主動開口：用記憶＋今日狀態，生一句『她先開口』的開場（像朋友、不是等你講）。"""
+    today = "今天天氣轉涼、有寒流。"  # demo；之後接真天氣＋每日感知排程
+    sys_i = (CHARS[char]["persona"] + RED + _profile_ctx()
+             + f"\n今天的狀態（你已經先知道了）：{today}")
+    task = ("現在是你『主動開口』跟她打招呼、開啟今天的聊天——像朋友一樣先關心，不是等她先講。"
+            "請生一段溫暖主動的開場：①關心她近況或今天 ②自然帶到一件你記得的事 "
+            "③主動分享一個你『最近發現、配她興趣、可以一起聊』的東西（電影／書／活動）。短、台灣暖口語、像真人。")
+    for attempt in range(4):
+        for m in ("gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"):
+            try:
+                r = client.models.generate_content(
+                    model=m, contents=task,
+                    config=types.GenerateContentConfig(system_instruction=sys_i, temperature=0.9))
+                return r.text.strip()
+            except Exception:
+                pass
+        time.sleep(2 * (attempt + 1))
+    return "(連不上腦)"
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
+    if args and args[0] == "open":
+        print("寧寧主動開口（用記憶＋今日狀態先備好）：\n")
+        print(open_chat())
+        print("\nDONE"); sys.exit()
     if args and args[0] == "learn":
         # 跨天記憶 demo：聊到新事情 → 自動記住 → 存檔（下次她就記得）
         convo = ("用戶：寧寧我跟你說，我下個月要搬去台北跟女兒美華住了，有點捨不得台南的老房子。\n"
