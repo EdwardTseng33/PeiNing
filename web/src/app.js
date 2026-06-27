@@ -62,6 +62,7 @@ function init() {
   // 連接裝置（狀態頁資料條 / 設定裝置區 → 串接三方裝置引導）
   if ($('#srcStrip')) $('#srcStrip').addEventListener('click', () => showView('connect'));
   if ($('#setDevices')) $('#setDevices').addEventListener('click', () => showView('connect'));
+  if ($('#setProfile')) $('#setProfile').addEventListener('click', () => say('這裡可以改媽媽的頭像、名稱、對家人顯示的稱呼、年齡、所在地。'));
   if ($('#connectBack')) $('#connectBack').addEventListener('click', () => showView('status'));
   $$('#connect .cn-btn').forEach(b => b.addEventListener('click', () => {
     const on = b.classList.toggle('done');
