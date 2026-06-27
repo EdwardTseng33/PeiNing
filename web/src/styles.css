@@ -6,7 +6,7 @@
   --teal: #3AA8A0; --teal-d: #2E8A83; --teal-dd: #236C66;
   --mint: #E3F0EC; --mint-2: #D2E6E0;
   --cream: #F4F0E8; --cream-2: #FBF8F2; --surface: #FFFFFF;
-  --ink: #1F2D29; --ink-2: #44514C; --muted: #8B9690;
+  --ink: #1F2D29; --ink-2: #44514C; --muted: #6B756F;
   --coral: #D98841; --coral-d: #C06E2E; --coral-soft: #F5E6D4;
   --gold: #E0B354; --gold-soft: #F6EAD0;
   --line: #ECE6DA;
@@ -70,7 +70,7 @@ body { font-family: var(--sans); background: #DDD; color: var(--ink); -webkit-fo
 .butler-card { position: relative; border-radius: var(--radius-lg); padding: 22px 20px 20px; margin-bottom: 6px; overflow: hidden; box-shadow: var(--shadow); background: linear-gradient(155deg, #FFFFFF 0%, #F1F8F5 100%); }
 .butler-card::before { content: ""; position: absolute; right: -40px; top: -40px; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle, rgba(58,168,160,.18), transparent 70%); }
 .bc-row { position: relative; display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
-.bc-avatar { width: 76px; height: 76px; border-radius: 26px; position: relative; flex-shrink: 0; background: linear-gradient(135deg, #CFE6DF, #A9D0C5); overflow: hidden; box-shadow: 0 10px 24px -10px rgba(46,138,131,.55); }
+.bc-avatar { width: 76px; height: 76px; border-radius: 26px; position: relative; flex-shrink: 0; background: linear-gradient(135deg, #CFE6DF, #A9D0C5); overflow: hidden; box-shadow: 0 10px 24px -10px rgba(46,138,131,.55); animation: floaty 5s ease-in-out infinite; }
 .bc-avatar .av-stripes { position: absolute; inset: 0; background: repeating-linear-gradient(135deg, rgba(255,255,255,.28) 0 7px, transparent 7px 14px); }
 .bc-avatar .online { position: absolute; right: 4px; bottom: 5px; width: 16px; height: 16px; border-radius: 50%; background: var(--teal); border: 3px solid #fff; }
 .bc-info { flex: 1; }
@@ -224,7 +224,7 @@ body { font-family: var(--sans); background: #DDD; color: var(--ink); -webkit-fo
 /* ============ 底部 5 分頁 ============ */
 .tab-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 80px; background: rgba(255,255,255,.92); backdrop-filter: blur(16px); border-top: 1px solid var(--line); display: flex; align-items: flex-start; padding: 11px 6px 0; z-index: 20; }
 .tab-bar.hidden { display: none; }
-.tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; border: none; background: none; font-family: var(--sans); font-size: 11px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; border: none; background: none; font-family: var(--sans); font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; }
 .tab-btn .ic { width: 23px; height: 23px; }
 .tab-btn.active { color: var(--teal-d); }
 .tab-btn.center { position: relative; }
@@ -434,4 +434,4 @@ body { font-family: var(--sans); background: #DDD; color: var(--ink); -webkit-fo
 .chat-mic.recording { background: linear-gradient(135deg, var(--coral), var(--coral-d)); animation: rec 1.1s infinite; }
 .chat-end { width: 58px; height: 58px; border-radius: 50%; background: #fff; display: grid; place-items: center; border: none; cursor: pointer; box-shadow: var(--shadow-sm); color: var(--danger); }
 .chat-end .ic { width: 26px; height: 26px; }
-.chat-hint { font-size: 14px; color: var(--muted); margin-top: 16px; }
+.chat-hint { font-size: 17px; color: var(--ink-2); margin-top: 16px; }
