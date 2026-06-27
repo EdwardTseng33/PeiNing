@@ -31,6 +31,26 @@
     .tl-body { flex:1; }
     .tl-text { font-size:15.5px; color:var(--ink); line-height:1.5; }
     .tl-time { font-size:12.5px; color:var(--muted); margin-top:3px; }
+    /* 訂閱與點數（子女端） */
+    .sub-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:18px;margin-bottom:16px}
+    .sub-plan{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:14px}
+    .sp-name{font-family:var(--display);font-weight:800;font-size:18px;color:var(--ink)}
+    .sp-tag{font-size:12.5px;color:var(--muted);margin-top:3px}
+    .sp-manage{font-size:13.5px;font-weight:700;color:var(--teal-d);white-space:nowrap;cursor:pointer}
+    .pts-row{display:flex;gap:12px;margin-bottom:12px}
+    .pts-box{flex:1;background:var(--mint);border-radius:14px;padding:12px 14px}
+    .pts-box.buy{background:#F6EAD0}
+    .pts-num{font-family:var(--display);font-weight:800;font-size:20px;color:var(--ink)}
+    .pts-lbl{font-size:11.5px;color:var(--ink-2);margin-top:2px;line-height:1.4}
+    .pts-bar{height:7px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden;margin-top:9px}
+    .pts-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--teal-d))}
+    .pack-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+    .pack{border:1.5px solid var(--line);border-radius:14px;padding:11px;text-align:center;cursor:pointer;transition:.15s;background:#fff}
+    .pack:hover,.pack.on{border-color:var(--teal);background:var(--mint)}
+    .pk-pts{font-family:var(--display);font-weight:800;font-size:16px;color:var(--ink)}
+    .pk-price{font-size:13px;color:var(--teal-d);font-weight:700;margin-top:2px}
+    .pk-save{font-size:11px;color:var(--coral);margin-top:1px;font-weight:600}
+    .sub-note{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.55}
   </style>
 </head>
 <body>
@@ -46,7 +66,7 @@
     <div class="pad">
 
       <div class="home-top">
-        <span class="brand"><svg class="ic logo-wave" viewBox="0 0 24 24"><path d="M8 8a5 5 0 0 1 0 8M11.5 5a9 9 0 0 1 0 14"/></svg><span class="pai">Pei</span><span class="ning">Ning</span></span>
+        <span class="brand"><svg class="ic logo-wave" viewBox="0 0 24 24"><path d="M8 8a5 5 0 0 1 0 8M11.5 5a9 9 0 0 1 0 14"/></svg><span class="pai">Mu</span><span class="ning">nea</span></span>
         <span class="fv-role"><svg class="ic" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>家人視角</span>
       </div>
 
@@ -125,6 +145,36 @@
         <div class="tl-item"><span class="tl-ico"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14 0M8.5 16.4a6 6 0 0 1 7 0M12 20h.01"/></svg></span><div class="tl-body"><div class="tl-text">血壓量了 128/79，平穩（來自 Apple 健康）</div><div class="tl-time">早上 8:30</div></div></div>
       </div>
 
+      <!-- 訂閱與點數（子女端管理；長輩端永遠看不到數字） -->
+      <div class="sec-head"><div><p class="sec-kicker">方案</p><h2 style="font-size:18px;font-weight:700;color:var(--ink)">訂閱與點數</h2></div></div>
+      <div class="sub-card">
+        <div class="sub-plan">
+          <div><div class="sp-name">基礎陪伴</div><div class="sp-tag">NT$499／月 · 1 位長輩 · 下次扣款 7/27</div></div>
+          <span class="sp-manage" id="manageBtn">管理方案 ›</span>
+        </div>
+        <div class="pts-row">
+          <div class="pts-box">
+            <div class="pts-num">168 點</div>
+            <div class="pts-lbl">這個月剩餘 · 月底歸零</div>
+            <div class="pts-bar"><i style="width:84%"></i></div>
+          </div>
+          <div class="pts-box buy">
+            <div class="pts-num">0 點</div>
+            <div class="pts-lbl">你加購的 · 永久不過期</div>
+          </div>
+        </div>
+        <div class="sub-note">媽媽聊天時用點數，但<b>她那邊看不到任何數字</b>、就是自然地聊。每月送的先用、用完才動到你加購的；真的都用完，寧寧會溫柔收尾、這裡通知你。</div>
+        <p class="sec-kicker" style="margin:16px 0 8px">不夠用？加購點數（永久不過期）</p>
+        <div class="pack-grid">
+          <div class="pack" data-pk="200" data-price="NT$350"><div class="pk-pts">200 點</div><div class="pk-price">NT$350</div></div>
+          <div class="pack" data-pk="500" data-price="NT$800"><div class="pk-pts">500 點</div><div class="pk-price">NT$800</div><div class="pk-save">省一點</div></div>
+          <div class="pack on" data-pk="1000" data-price="NT$1,500"><div class="pk-pts">1000 點</div><div class="pk-price">NT$1,500</div><div class="pk-save">最熱門</div></div>
+          <div class="pack" data-pk="2000" data-price="NT$2,900"><div class="pk-pts">2000 點</div><div class="pk-price">NT$2,900</div><div class="pk-save">最划算</div></div>
+        </div>
+        <button class="relay-send" id="buyBtn" style="margin-top:14px">加購 1000 點 · NT$1,500</button>
+        <div class="relay-sent" id="buySent"><svg class="ic" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M20 6L9 17l-5-5"/></svg>已加購、點數進帳了</div>
+      </div>
+
       <button class="fam-call-btn" id="videoBtn" style="margin-top:18px"><svg class="ic" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>視訊看看媽媽</button>
       <div style="height:30px"></div>
 
@@ -150,6 +200,18 @@
   $('#videoBtn').addEventListener('click', () => {
     alert('（原型）正式版：撥給媽媽端、寧寧先跟她說「美華要跟你視訊，接起來看看」。');
   });
+  // 訂閱與點數
+  document.querySelectorAll('.pack').forEach(p => p.addEventListener('click', () => {
+    document.querySelectorAll('.pack').forEach(x => x.classList.remove('on'));
+    p.classList.add('on');
+    $('#buyBtn').textContent = '加購 ' + p.dataset.pk + ' 點 · ' + p.dataset.price;
+  }));
+  $('#buyBtn').addEventListener('click', () => {
+    flash($('#buySent'));
+    const b = $('#buyBtn'); b.style.opacity = '.7'; b.textContent = '已加購 ❤';
+  });
+  const mb = $('#manageBtn');
+  if (mb) mb.addEventListener('click', () => alert('（原型）方案管理：升級到高級 NT$999（2 位長輩）/ 尊榮 NT$1,999（含生動寧寧）、或調整、暫停。'));
 </script>
 </body>
 </html>
