@@ -120,16 +120,19 @@ class H(BaseHTTPRequestHandler):
             self.send_response(404); self.end_headers()
 
     def do_POST(self):
-        ln = int(self.headers.get("Content-Length", 0))
-        data = json.loads(self.rfile.read(ln) or "{}")
-        if self.path == "/open":
-            t = eng.open_chat()
-            self._json({"reply": t, "audio": tts_b64(t)})
-        elif self.path == "/chat":
-            t = reply_conv(data.get("history", []))
-            self._json({"reply": t, "audio": tts_b64(t)})
-        else:
-            self.send_response(404); self.end_headers()
+        try:
+            ln = int(self.headers.get("Content-Length", 0))
+            data = json.loads(self.rfile.read(ln).decode("utf-8", "replace") or "{}")
+            if self.path == "/open":
+                t = eng.open_chat()
+                self._json({"reply": t, "audio": tts_b64(t)})
+            elif self.path == "/chat":
+                t = reply_conv(data.get("history", []))
+                self._json({"reply": t, "audio": tts_b64(t)})
+            else:
+                self.send_response(404); self.end_headers()
+        except Exception as e:
+            self._json({"reply": "（不好意思，我這邊出了點小狀況，稍等一下再陪你～）", "audio": "", "err": str(e)[:80]})
 
 
 if __name__ == "__main__":
