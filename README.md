@@ -1,8 +1,8 @@
-# PeiNing (陪寧)
+# Munea (沐寧)
 
 > A personal AI butler that lives in your phone — speaks Taiwanese, remembers you, and reaches out before you have to ask.
 
-**PeiNing (陪寧)** is a personal AI butler app for elders (60+), bought by their adult children. It is presented as a warm, capable **30–35-year-old butler** — deliberately *not* an "elderly app" — and is built to feel like a real person to talk to: it listens and speaks naturally, perceives the day, remembers the person deeply, and quietly watches over their safety.
+**Munea (沐寧)** is a personal AI butler app for elders (60+), bought by their adult children. It is presented as a warm, capable **30–35-year-old butler** — deliberately *not* an "elderly app" — and is built to feel like a real person to talk to: it listens and speaks naturally, perceives the day, remembers the person deeply, and quietly watches over their safety.
 
 - **Core audience:** elders 60+ (the "master" being served)
 - **Buyer:** their adult children (the user ≠ the payer)

@@ -1,4 +1,4 @@
-# 陪寧 · 擬真 Avatar 顯卡經濟學 + LiveAvatar 評估（2026-06-27 · 卡西法 CTO）
+# 沐寧 · 擬真 Avatar 顯卡經濟學 + LiveAvatar 評估（2026-06-27 · 卡西法 CTO）
 
 > Edward 深問：仍用 RTX4090 跑不動 LiveAvatar 嗎？雲端顯卡費用怎麼算到每用戶成本？一張卡服務多少人？有沒有辦法用上 LiveAvatar 更高品質？
 > 來源：WebFetch LiveAvatar(Alibaba-Quark) + WanS2V(Wan2.2-S2V-14B) 規格 + 卡西法 VRAM/GPU 經濟學算式 + Ditto PoC 數據。

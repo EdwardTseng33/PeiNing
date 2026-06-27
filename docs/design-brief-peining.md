@@ -1,7 +1,7 @@
-# 陪寧 PeiNing — App 設計需求文件（Design Brief）
+# 沐寧 Munea — App 設計需求文件（Design Brief）
 
 > 給 Claude Design 做正式視覺設計用 · 2026-06-26
-> 視覺對標：Careon 官網（careon-site.vercel.app，同公司智慧健康產品線，陪寧延續其視覺 DNA）
+> 視覺對標：Careon 官網（careon-site.vercel.app，同公司智慧健康產品線，沐寧延續其視覺 DNA）
 
 ---
 

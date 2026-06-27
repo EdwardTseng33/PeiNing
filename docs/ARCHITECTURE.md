@@ -1,13 +1,13 @@
-# PeiNing — System Architecture
+# Munea — System Architecture
 
-> The full system design for the PeiNing personal AI butler.
+> The full system design for the Munea personal AI butler.
 > Source of truth for the product/solution layer; deep media-infra detail lives alongside the voice engine.
 
 ---
 
 ## 1. Positioning
 
-A personal AI butler **engine**, with PeiNing as its first "skin": a 30–35-year-old butler devoted to one elder.
+A personal AI butler **engine**, with Munea as its first "skin": a 30–35-year-old butler devoted to one elder.
 Core audience = elders 60+ (served); buyer = adult children. The engine is reusable — future skins can serve other segments.
 
 ## 2. Three Brains + One Face
