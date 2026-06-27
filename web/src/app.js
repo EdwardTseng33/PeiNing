@@ -5,7 +5,7 @@
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
-const OVERLAYS = ['call', 'med', 'chat'];
+const OVERLAYS = ['call', 'med', 'chat', 'connect'];
 let callTimer = null;
 
 function showView(id) {
@@ -58,6 +58,16 @@ function init() {
   $('#endCall').addEventListener('click', () => showView('home'));
   $('#medTaken').addEventListener('click', () => { say('好，記下來了，連續六天，你真棒。'); showView('home'); });
   $('#medSnooze').addEventListener('click', () => showView('home'));
+
+  // 連接裝置（狀態頁資料條 / 設定裝置區 → 串接三方裝置引導）
+  if ($('#srcStrip')) $('#srcStrip').addEventListener('click', () => showView('connect'));
+  if ($('#setDevices')) $('#setDevices').addEventListener('click', () => showView('connect'));
+  if ($('#connectBack')) $('#connectBack').addEventListener('click', () => showView('status'));
+  $$('#connect .cn-btn').forEach(b => b.addEventListener('click', () => {
+    const on = b.classList.toggle('done');
+    b.textContent = on ? '✓ 已連接' : (b.dataset.label || '連接');
+    if (on) say('好，連上了，之後媽媽的數據我會自動看著。');
+  }));
 
   // 今天一起完成（任務打勾）
   $('#taskCard').addEventListener('click', e => { const it = e.target.closest('.task-item'); if (it) toggleTask(it); });

@@ -397,6 +397,29 @@ body { font-family: var(--sans); background: #DDD; color: var(--ink); -webkit-fo
 
 /* ===== 聊聊：日常語音陪聊（暖色，跟視訊分開） ===== */
 .chat-screen { background: var(--mint); } /* 聊聊頁＝單一薄荷綠底（Edward 6/27：薄荷綠當其他畫面底色、跟米黃區隔；亦無漸層） */
+
+/* 連接裝置引導（狀態頁 → 串接三方裝置）· Edward 6/27 */
+.cn-back { background: none; border: none; color: var(--muted); font-family: var(--display); font-weight: 600; font-size: 15px; cursor: pointer; padding: 8px 0; display: inline-flex; align-items: center; gap: 5px; }
+.cn-back .ic { width: 18px; height: 18px; }
+.cn-intro { display: flex; gap: 13px; align-items: flex-start; background: linear-gradient(120deg, #EAF4F0, #FBF8F2); border: 1px solid rgba(58,168,160,.16); border-radius: var(--radius-sm); padding: 15px 16px; margin-bottom: 18px; }
+.cn-intro .ic { width: 26px; height: 26px; color: var(--teal-d); flex-shrink: 0; margin-top: 1px; }
+.cn-intro p { font-size: 15px; line-height: 1.6; color: var(--ink-2); }
+.cn-intro b { font-family: var(--display); color: var(--ink); }
+.cn-row { display: flex; align-items: center; gap: 13px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 15px; margin-bottom: 11px; }
+.cn-row .cn-ico { width: 44px; height: 44px; border-radius: 12px; background: var(--mint); display: grid; place-items: center; color: var(--teal-d); flex-shrink: 0; }
+.cn-row .cn-ico .ic { width: 24px; height: 24px; }
+.cn-row .cn-mid { flex: 1; }
+.cn-row .cn-name { font-family: var(--display); font-weight: 600; font-size: 16px; color: var(--ink); }
+.cn-row .cn-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.cn-row .cn-btn { font-family: var(--display); font-weight: 700; font-size: 14px; color: #fff; background: linear-gradient(135deg, var(--teal), var(--teal-d)); border: none; border-radius: 999px; padding: 9px 17px; cursor: pointer; flex-shrink: 0; }
+.cn-row .cn-btn.done { background: var(--mint); color: var(--teal-dd); }
+.cn-note { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 15px 16px; margin-top: 18px; }
+.cn-note .ic { width: 24px; height: 24px; color: var(--gold); flex-shrink: 0; }
+.cn-note p { font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.cn-note b { font-family: var(--display); color: var(--ink); }
+.cn-privacy { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 16px; display: flex; gap: 6px; align-items: center; justify-content: center; }
+.cn-privacy .ic { width: 14px; height: 14px; }
+.src-strip .sr-chev { margin-left: auto; flex-shrink: 0; width: 18px; height: 18px; }
 .chat-inner { min-height: calc(100vh - 44px); display: flex; flex-direction: column; align-items: center; padding: 16px 24px 36px; }
 .chat-butler { width: 132px; height: 132px; border-radius: 50%; overflow: hidden; margin: 26px 0 10px; box-shadow: 0 20px 44px -18px rgba(46,138,131,.5); animation: floaty 4.5s ease-in-out infinite; border: 4px solid #fff; }
 .chat-butler img { width: 100%; height: 100%; object-fit: cover; }
