@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#F4F0E8" />
+  <title>沐寧 Munea · 有一個人，會一直記得你</title>
+  <link rel="icon" type="image/png" href="icons/peining-app-icon-source-rounded-transparent-clean-256.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --cream:#F4F0E8; --cream-d:#EAE3D6; --ink:#3A352E; --ink-2:#6B6358;
+      --teal:#3AA8A0; --teal-d:#2E8A83; --coral:#D98841; --gold:#E0B354;
+      --serif:'Noto Serif TC',Georgia,serif; --sans:'Noto Sans TC',sans-serif;
+      --maxw:1080px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--sans);color:var(--ink);background:var(--cream);line-height:1.75;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+    .serif{font-family:var(--serif)}
+    /* nav */
+    nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+    .logo{font-family:var(--serif);font-weight:900;font-size:24px;color:var(--ink);letter-spacing:.5px}
+    .logo .m{color:var(--teal-d)}
+    .nav-cta{font-family:var(--sans);font-weight:700;font-size:15px;color:#fff;background:var(--teal-d);padding:10px 20px;border-radius:999px;text-decoration:none}
+    /* hero */
+    .hero{padding:46px 0 60px;text-align:center}
+    .hero h1{font-family:var(--serif);font-weight:900;font-size:clamp(34px,6vw,60px);line-height:1.25;color:var(--ink);letter-spacing:.5px}
+    .hero h1 em{font-style:italic;color:var(--teal-d)}
+    .hero .sub{font-size:clamp(16px,2.3vw,20px);color:var(--ink-2);max-width:620px;margin:24px auto 0;line-height:1.85}
+    .hero .ens{font-family:var(--serif);font-style:italic;color:var(--ink-2);opacity:.7;font-size:17px;margin-top:14px}
+    .hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:36px}
+    .btn{font-family:var(--sans);font-weight:700;font-size:17px;padding:15px 30px;border-radius:999px;text-decoration:none;cursor:pointer;border:none;transition:.15s}
+    .btn-main{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#fff;box-shadow:0 16px 34px -14px rgba(58,168,160,.8)}
+    .btn-main:hover{transform:translateY(-2px)}
+    .btn-ghost{background:#fff;color:var(--teal-d);border:1.5px solid var(--cream-d)}
+    .hero-orb{width:118px;height:118px;border-radius:50%;margin:0 auto 30px;overflow:hidden;border:5px solid #fff;box-shadow:0 22px 50px -20px rgba(58,53,46,.45);background:var(--teal)}
+    .hero-orb img{width:100%;height:100%;object-fit:cover}
+    /* value cards */
+    .vals{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;padding:30px 0 60px}
+    .val{background:#fff;border-radius:22px;padding:30px 26px;box-shadow:0 18px 40px -28px rgba(58,53,46,.3)}
+    .val .vi{width:54px;height:54px;border-radius:16px;background:var(--cream);display:grid;place-items:center;color:var(--teal-d);margin-bottom:18px}
+    .val h3{font-family:var(--serif);font-weight:700;font-size:21px;margin-bottom:8px}
+    .val p{color:var(--ink-2);font-size:15.5px}
+    /* who-for */
+    .whofor{text-align:center;padding:56px 0;background:linear-gradient(180deg,transparent,var(--cream-d) 60%,transparent);border-radius:30px}
+    .whofor h2{font-family:var(--serif);font-weight:700;font-size:clamp(24px,3.6vw,34px);margin-bottom:24px}
+    .whofor .lines{color:var(--ink-2);font-size:18px;line-height:2.2}
+    .whofor .lines b{color:var(--ink);font-weight:500;font-family:var(--serif)}
+    .whofor .close{font-family:var(--serif);font-weight:700;font-size:clamp(20px,3vw,26px);color:var(--teal-d);margin-top:26px}
+    /* dual entry */
+    .dual{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:56px 0}
+    .door{background:#fff;border-radius:24px;padding:34px 30px;border:1.5px solid var(--cream-d)}
+    .door .dk{font-size:13px;font-weight:700;color:var(--coral);letter-spacing:1px;text-transform:uppercase}
+    .door h3{font-family:var(--serif);font-weight:700;font-size:24px;margin:10px 0 12px}
+    .door p{color:var(--ink-2);font-size:15.5px;min-height:78px}
+    .door .btn{display:inline-block;margin-top:14px}
+    /* footer */
+    footer{padding:50px 0 60px;text-align:center;border-top:1px solid var(--cream-d);margin-top:30px}
+    .tagline{font-family:var(--serif);font-weight:700;font-size:clamp(22px,3.4vw,30px);color:var(--ink)}
+    .tagline .en{display:block;font-style:italic;font-size:17px;color:var(--ink-2);font-weight:500;margin-top:8px;opacity:.8}
+    .disc{max-width:640px;margin:30px auto 0;font-size:12.5px;color:var(--ink-2);opacity:.85;line-height:1.7}
+    .foot-meta{margin-top:22px;font-size:13px;color:var(--ink-2);opacity:.7}
+    @media(max-width:760px){ .vals{grid-template-columns:1fr} .dual{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <nav>
+      <span class="logo"><span class="m">Mu</span>nea 沐寧</span>
+      <a class="nav-cta" href="#start">先聊聊看</a>
+    </nav>
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="hero-orb"><img src="avatars/nening-real-female.png" alt="寧寧"></div>
+      <h1>有一個人，<br>會<em>一直記得</em>你。</h1>
+      <p class="ens serif">Someone who will always remember you.</p>
+      <p class="sub">沐寧是住在手機裡、會說話、記得你說過的每件事、出事會幫你找人的家人。<br>為你，也為你最放不下的那個人。</p>
+      <div class="hero-cta" id="start">
+        <a class="btn btn-main" href="#doors">讓沐寧開始記得你</a>
+        <a class="btn btn-ghost" href="#doors">幫家人裝一個</a>
+      </div>
+    </header>
+
+    <!-- VALUES -->
+    <section class="vals">
+      <div class="val">
+        <span class="vi"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+        <h3>她記得你</h3>
+        <p>上次你說的、你愛聽的、你的老故事，她都收著。下次見面，從那裡接著聊。</p>
+      </div>
+      <div class="val">
+        <span class="vi"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M6 6 4.5 4.5M19.5 19.5 18 18M6 18l-1.5 1.5M19.5 4.5 18 6"/></svg></span>
+        <h3>她主動找你</h3>
+        <p>不用你開口。早晨第一句，就有今天的天氣、和你心裡的那份牽掛。</p>
+      </div>
+      <div class="val">
+        <span class="vi"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <h3>她替你守著</h3>
+        <p>不對勁的時候，她會幫你找到該找的人。你不是一個人扛。</p>
+      </div>
+    </section>
+
+    <!-- WHO FOR -->
+    <section class="whofor">
+      <div class="wrap">
+        <h2>你心裡，是不是也有一個放不下的人？</h2>
+        <div class="lines">
+          也許是<b>獨自在家的爸媽</b>。<br>
+          也許是<b>每天和數字相處、嘴上說沒事的另一半</b>。<br>
+          也許，是<b>累到忘了自己的——你</b>。
+        </div>
+        <div class="close">沐寧，給每一個需要「被好好記著」的人。</div>
+      </div>
+    </section>
+
+    <!-- DUAL ENTRY -->
+    <section class="dual" id="doors">
+      <div class="door">
+        <span class="dk">幫你在乎的人</span>
+        <h3>幫他裝好，剩下的交給沐寧。</h3>
+        <p>你忙、你不在身邊、你不好意思一直問——沒關係。幫爸媽裝好沐寧，她替你每天陪著、記著、守著。你在手機上，就知道他今天好不好。</p>
+        <a class="btn btn-main" href="#">幫家人裝</a>
+      </div>
+      <div class="door">
+        <span class="dk">也，給你自己</span>
+        <h3>也，給你自己一個。</h3>
+        <p>不是只有別人需要被陪。每天和日子角力的你、深夜還醒著的你、想找個人說說話的你——沐寧也記得你、也在乎你。</p>
+        <a class="btn btn-ghost" href="#">我自己先試試</a>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="tagline serif">有人在乎，就會心安。<span class="en">Cared for, always.</span></div>
+      <p class="disc">沐寧是陪伴與生活提醒的夥伴，不提供醫療診斷、治療或建議。健康問題請諮詢專業醫師。緊急狀況請撥打 119／1925。</p>
+      <p class="foot-meta">© 2026 Munea 沐寧 · munea.net</p>
+    </footer>
+  </div>
+
+</body>
+</html>
