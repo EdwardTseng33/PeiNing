@@ -106,7 +106,6 @@ function init() {
   // 首頁「跟寧寧聊聊」＝ 進同一個全屏臉（不再有獨立視訊頁）
   if ($('#startCall')) $('#startCall').addEventListener('click', () => showView('chat'));
   // 用藥服務窗（獨立功能、保留）
-  if ($('#toMed')) $('#toMed').addEventListener('click', () => { showView('med'); say('吃藥時間到囉。'); });
   if ($('#medTaken')) $('#medTaken').addEventListener('click', () => { say('好，記下來了，連續六天，你真棒。'); showView('home'); });
   if ($('#medSnooze')) $('#medSnooze').addEventListener('click', () => showView('home'));
 
@@ -177,10 +176,6 @@ function init() {
   // 一鍵回診摘要
   const rep = $('#reportBtn');
   if (rep) rep.addEventListener('click', () => say('好，我把這個月的用藥和血壓整理成一張，回診給醫生看就清楚了。'));
-
-  // 找家人
-  const ask = $('#askCall');
-  if (ask) ask.addEventListener('click', () => say('好，我會提醒美華今晚打給你。'));
 
   // 發起挑戰面板
   const chalModal = $('#chalModal');

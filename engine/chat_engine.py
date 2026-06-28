@@ -82,8 +82,9 @@ def remember(history_text):
 
 def open_chat(char="寧寧"):
     """主動開口：用記憶＋今日狀態，生一句『她先開口』的開場（像朋友、不是等你講）。"""
+    c = CHARS.get(char, CHARS["寧寧"])
     today = "今天天氣轉涼、有寒流。"  # demo；之後接真天氣＋每日感知排程
-    sys_i = (CHARS[char]["persona"] + RED + _profile_ctx()
+    sys_i = (c["persona"] + RED + _profile_ctx()
              + f"\n今天的狀態（你已經先知道了）：{today}")
     task = ("現在是你『主動開口』跟她打招呼、開啟今天的聊天——像朋友一樣先關心，不是等她先講。"
             "請生一段溫暖主動的開場：①關心她近況或今天 ②自然帶到一件你記得的事 "
