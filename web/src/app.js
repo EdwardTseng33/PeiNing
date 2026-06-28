@@ -5,8 +5,7 @@
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
-const OVERLAYS = ['call', 'med', 'chat', 'connect'];
-let callTimer = null;
+const OVERLAYS = ['med', 'chat', 'connect'];
 
 /* ===== [ENGINE] 真角色腦：頭像 ↔ 角色名、對話狀態、跟伺服器要回話＋語音 ===== */
 const AVA_TO_CHAR = {
@@ -19,21 +18,40 @@ let chatHistory = [];            // 多輪對話脈絡
 let chatOpened = false;          // 這次進聊聊她有沒有先開過口
 let chatAudio = null;
 
+/* ===== [§6.2] 四狀態：待命 / 聆聽 / 思考 / 說話 —— 切 #chat 的 data-state ===== */
+let speakTimer = null;
+function setFaceState(st) {
+  const sc = $('#chat');
+  if (sc) sc.dataset.state = st;
+}
+// 說話態：依字幕長度估個說話時長，講完自動回待命（之後接真 avatar 用音檔長度精準收尾）
+function faceSpeak(text) {
+  setFaceState('speaking');
+  clearTimeout(speakTimer);
+  const ms = Math.min(8000, Math.max(2200, (text ? text.length : 8) * 165));
+  speakTimer = setTimeout(() => { if ($('#chat') && $('#chat').dataset.state === 'speaking') setFaceState('idle'); }, ms);
+}
+
 function playB64(b64) {
   try { if (chatAudio) chatAudio.pause(); chatAudio = new Audio('data:audio/wav;base64,' + b64); chatAudio.play(); } catch (e) {}
 }
 // 跟真腦講話；沒有伺服器（純靜態 demo）就回 null、讓畫面自己退回規則版
 async function brainPost(url, body) {
+  // 加超時護欄：語音腦連不上時，不卡死畫面（§6.5 降級鐵律：對話不斷、老實退回）
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 6000);
   try {
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctrl.signal });
     if (!r.ok) return null;
     return await r.json();
   } catch (e) { return null; }
+  finally { clearTimeout(to); }
 }
 // 進聊聊頁：她像朋友一樣「主動先開口」（帶記憶＋今日狀態）
 async function enterChat() {
   if (chatOpened) return;
   chatOpened = true;
+  setFaceState('idle');
   const cap = $('#chatCaption');
   if (cap) cap.textContent = '我在這裡，今天過得好嗎？';   // 先暖暖招呼、不留空白，等個人化開場回來再換
   const r = await brainPost('/open', { char: currentChar });
@@ -41,8 +59,10 @@ async function enterChat() {
     if (cap) cap.textContent = r.reply;
     chatHistory.push({ role: 'model', text: r.reply });
     if (r.audio) playB64(r.audio); else say(r.reply);
+    faceSpeak(r.reply);
   } else if (cap) {
     cap.textContent = '我在這裡，今天過得好嗎？想聊什麼都可以。';   // 沒真腦時的暖場
+    faceSpeak(cap.textContent);
   }
 }
 
@@ -52,19 +72,8 @@ function showView(id) {
   $('#tabBar').classList.toggle('hidden', overlay);
   $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === id));
   const el = $('#' + id); if (el) el.scrollTop = 0;
-  if (id === 'call') startCallTimer(); else stopCallTimer();
   if (id === 'chat') enterChat();
 }
-
-function startCallTimer() {
-  let s = 0; if ($('#callTimer')) $('#callTimer').textContent = '00:00';
-  clearInterval(callTimer);
-  callTimer = setInterval(() => {
-    s++; const m = String(Math.floor(s/60)).padStart(2,'0'); const ss = String(s%60).padStart(2,'0');
-    if ($('#callTimer')) $('#callTimer').textContent = `${m}:${ss}`;
-  }, 1000);
-}
-function stopCallTimer() { clearInterval(callTimer); }
 
 // [ENGINE] 原型用瀏覽器內建語音；正式版換台灣中文 TTS（台語後期）
 function say(text) {
@@ -92,11 +101,12 @@ function toggleTask(item) {
 function init() {
   $('#tabBar').addEventListener('click', e => { const b = e.target.closest('.tab-btn'); if (b) showView(b.dataset.view); });
 
-  $('#startCall').addEventListener('click', () => { showView('call'); say('陳奶奶，我在，看得到我嗎？'); });
-  $('#toMed').addEventListener('click', () => { showView('med'); say('陳奶奶，吃藥時間到囉。'); });
-  $('#endCall').addEventListener('click', () => showView('home'));
-  $('#medTaken').addEventListener('click', () => { say('好，記下來了，連續六天，你真棒。'); showView('home'); });
-  $('#medSnooze').addEventListener('click', () => showView('home'));
+  // 首頁「跟寧寧聊聊」＝ 進同一個全屏臉（不再有獨立視訊頁）
+  if ($('#startCall')) $('#startCall').addEventListener('click', () => showView('chat'));
+  // 用藥服務窗（獨立功能、保留）
+  if ($('#toMed')) $('#toMed').addEventListener('click', () => { showView('med'); say('陳奶奶，吃藥時間到囉。'); });
+  if ($('#medTaken')) $('#medTaken').addEventListener('click', () => { say('好，記下來了，連續六天，你真棒。'); showView('home'); });
+  if ($('#medSnooze')) $('#medSnooze').addEventListener('click', () => showView('home'));
 
   // 連接裝置（狀態頁資料條 / 設定裝置區 → 串接三方裝置引導）
   if ($('#srcStrip')) $('#srcStrip').addEventListener('click', () => showView('connect'));
@@ -207,17 +217,20 @@ function init() {
     const cap = $('#chatCaption');
     if (cap) cap.textContent = `你說：「${t}」`;
     chatHistory.push({ role: 'user', text: t });
-    setTimeout(() => { if (cap && cap.textContent.startsWith('你說')) cap.textContent = '嗯…我想想'; }, 450);
+    // [§6.2] 思考態：不空等轉圈，臉有「她在想」的活著感（< 1.5s 內回）
+    setTimeout(() => { setFaceState('thinking'); if (cap && cap.textContent.startsWith('你說')) cap.textContent = '嗯…我想想'; }, 380);
     const r = await brainPost('/chat', { history: chatHistory, char: currentChar });
     if (r && r.reply) {                              // 真腦回話＋真聲音
       if (cap) cap.textContent = r.reply;
       chatHistory.push({ role: 'model', text: r.reply });
       if (r.audio) playB64(r.audio); else say(r.reply);
+      faceSpeak(r.reply);
     } else {                                          // 沒真腦 → 退回規則版（純靜態 demo 也能動）
       const rr = chatReply(t);
       if (cap) cap.textContent = rr;
       chatHistory.push({ role: 'model', text: rr });
       say(rr);
+      faceSpeak(rr);
     }
   }
   const chatMic = $('#chatMic');
@@ -225,9 +238,9 @@ function init() {
     if (!SR2) { const s = prompt('（這個瀏覽器先用打字，正式版用即時語音）跟寧寧說什麼？'); if (s) chatHandle(s); return; }
     if (chatOn) { chatRec && chatRec.stop(); return; }
     chatRec = new SR2(); chatRec.lang = 'zh-TW'; chatRec.interimResults = false;
-    chatRec.onstart = () => { chatOn = true; chatMic.classList.add('recording'); if ($('#chatCaption')) $('#chatCaption').textContent = '嗯，我聽著呢…'; if ($('#chatHint')) $('#chatHint').textContent = '再點一下結束'; };
+    chatRec.onstart = () => { chatOn = true; chatMic.classList.add('recording'); setFaceState('listening'); if ($('#chatCaption')) $('#chatCaption').textContent = '嗯，我聽著呢…'; };
     chatRec.onresult = e => chatHandle(e.results[0][0].transcript);
-    chatRec.onend = () => { chatOn = false; chatMic.classList.remove('recording'); if ($('#chatHint')) $('#chatHint').textContent = '點麥克風，跟我說說話'; };
+    chatRec.onend = () => { chatOn = false; chatMic.classList.remove('recording'); if ($('#chat') && $('#chat').dataset.state === 'listening') setFaceState('idle'); };
     chatRec.onerror = chatRec.onend;
     chatRec.start();
   });
@@ -239,7 +252,8 @@ function init() {
     const o = e.target.closest('.avo:not(.soon)'); if (!o) return;
     currentChar = AVA_TO_CHAR[o.dataset.ava] || '寧寧';
     chatHistory = []; chatOpened = false;
-    const nm = $('.chat-name'); if (nm) nm.textContent = currentChar;
+    const nm = $('#chatName'); if (nm) nm.textContent = currentChar;
+    const fimg = $('#faceImg'); if (fimg) fimg.src = 'avatars/' + o.dataset.ava + '.png';
     if ($('#chatCaption')) $('#chatCaption').textContent = `${currentChar}在這裡，想聊什麼都可以。`;
   });
 
