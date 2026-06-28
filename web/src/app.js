@@ -35,7 +35,7 @@ async function enterChat() {
   if (chatOpened) return;
   chatOpened = true;
   const cap = $('#chatCaption');
-  if (cap) cap.textContent = '⋯';
+  if (cap) cap.textContent = '我在這裡，今天過得好嗎？';   // 先暖暖招呼、不留空白，等個人化開場回來再換
   const r = await brainPost('/open', { char: currentChar });
   if (r && r.reply) {
     if (cap) cap.textContent = r.reply;
@@ -207,7 +207,7 @@ function init() {
     const cap = $('#chatCaption');
     if (cap) cap.textContent = `你說：「${t}」`;
     chatHistory.push({ role: 'user', text: t });
-    setTimeout(() => { if (cap && cap.textContent.startsWith('你說')) cap.textContent = '⋯'; }, 450);
+    setTimeout(() => { if (cap && cap.textContent.startsWith('你說')) cap.textContent = '嗯…我想想'; }, 450);
     const r = await brainPost('/chat', { history: chatHistory, char: currentChar });
     if (r && r.reply) {                              // 真腦回話＋真聲音
       if (cap) cap.textContent = r.reply;
