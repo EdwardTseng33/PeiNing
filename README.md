@@ -15,8 +15,9 @@ Munea is positioned as **smart care and companionship, not medical software**. I
 - **Core user:** people who want daily AI health-care companionship, plus the family members who care about them.
 - **First platform:** iOS first, Android later.
 - **First experience:** open the app and use `聊聊`: a fullscreen butler face with voice, subtitles, memory, and gentle proactive care.
-- **MVP scope:** Mandarin voice companionship, health-routine reminders, family interaction, emotional safety referral, onboarding, and a family dashboard.
-- **Future moat:** Taiwanese voice support, richer avatar engines, deeper memory, health-data integrations, and hardware-assisted care services.
+- **MVP scope:** Taiwan Mandarin voice companionship, health-routine reminders, family interaction, emotional safety referral, onboarding, and a family dashboard.
+- **Language priority:** Taiwan Mandarin first, English second. Taiwanese Hokkien is research-only for now because there is no mature enough real-time product path, and Munea will not self-train a language model.
+- **Future moat:** a warmer Taiwan Mandarin / English voice experience, richer avatar engines, deeper memory, health-data integrations, and hardware-assisted care services.
 
 The working north star is an AI health-care companion for everyday life. Older-adult care is an important first scenario, not the product boundary. Munea should feel like a capable 30-35-year-old butler: warm, attentive, calm, and useful without making the user feel labeled.
 
@@ -117,7 +118,7 @@ Critical principle: **conversation continuity beats face fidelity**. If avatar r
 
 ### Phase 3 — Service expansion
 
-- Taiwanese voice pipeline
+- improved Taiwan Mandarin / English voice quality
 - richer avatar rendering
 - B2B2C care partnerships
 - optional hardware and home-care extensions

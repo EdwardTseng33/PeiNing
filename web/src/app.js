@@ -1,6 +1,6 @@
 /* Munea 沐寧 — 原型互動
  * 落實 Claude Design「沐寧 沐寧 配色」+ Elfie 融入（安心存摺 / 今天一起完成 / 家人互動）
- * 標 [ENGINE] 處正式版接 castle-voice-engine（台灣中文語音 + 三顆腦 + 擬真 avatar；台語/英語後期）。 */
+ * 標 [ENGINE] 處正式版接 castle-voice-engine（中文〔台灣〕優先、英文第二 + 三顆腦 + 擬真 avatar；台語先不承諾）。 */
 
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -77,7 +77,7 @@ function showView(id) {
   if (id === 'chat') enterChat();
 }
 
-// [ENGINE] 原型用瀏覽器內建語音；正式版換台灣中文 TTS（台語後期）
+// [ENGINE] 原型用瀏覽器內建語音；正式版換中文（台灣）/英文語音接點
 function say(text) {
   if (!('speechSynthesis' in window)) return;
   speechSynthesis.cancel();
@@ -203,7 +203,7 @@ function init() {
   if ($('#bookBtn')) $('#bookBtn').addEventListener('click', () => { $('#viewAll').classList.remove('active'); $('#viewPerson').classList.remove('active'); $('#viewBook').classList.add('active'); });
   if ($('#bookBack')) $('#bookBack').addEventListener('click', () => { $('#viewBook').classList.remove('active'); $('#viewAll').classList.add('active'); });
 
-  // 聊聊：日常語音陪聊 · [ENGINE] 正式版換台灣中文 STT/TTS（台語後期）+ 反射腦
+  // 聊聊：日常語音陪聊 · [ENGINE] 正式版換中文（台灣）/英文即時語音 + 反射腦
   const SR2 = window.SpeechRecognition || window.webkitSpeechRecognition;
   let chatRec = null, chatOn = false;
   const CHAT_RULES = [

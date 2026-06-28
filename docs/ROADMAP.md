@@ -9,6 +9,7 @@
 ## Step 1 — Minimum running version, on the existing engine (~70% reuse)
 - Reflex brain (natural speech) + **2D face** (self-hostable now) + basic butler brain (memory + morning context) + medication reminders + family dashboard + child-led onboarding.
 - Ship to a real device; nail voice latency.
+- Language priority: Taiwan Mandarin first, English second. Taiwanese Hokkien stays in research until a mature commercial path exists.
 
 ## Step 2 — Deepen the butler + bring on the photorealistic face (if Step 0 PoC passes)
 - Full perception + memory layers (more sources, long-term store).
@@ -26,10 +27,10 @@
 | Layer | Self-host? | Note |
 |---|---|---|
 | 📲 Push (reach elder when app closed) | ✅ yes | iOS standard |
-| 👂 Listen (Taiwanese STT) | ✅ yes | open source; already have it |
+| 👂 Listen (Taiwan Mandarin / English) | 🟡 integrate first | use mature model/provider capability; do not self-train a language model |
 | 🧠 Think (brain) | ✅ yes | open models self-hostable; heaviest reasoning can use cheap cloud, cost-controlled |
-| 🗣️ Speak (TTS) | ✅ yes | mature open-source TTS |
+| 🗣️ Speak (Taiwan Mandarin / English) | 🟡 integrate first | voice quality and latency matter more than owning the model |
 | 🙂 Face — 2D (animal / cartoon) | ✅ yes, now | cheap; near-zero hardware cost |
 | 🙂 Face — photorealistic (4) | 🟡 yes, but PoC first | quality achievable; affordable real-time is the frontier to test |
 
-**Bottom line:** the whole chain is self-hostable — 5 of 6 layers confirmed now; only affordable real-time photorealistic faces need one proper PoC.
+**Bottom line:** do not bet the product on self-training language models. The near-term product risk is voice quality/latency in Taiwan Mandarin and English, plus affordable real-time faces.
