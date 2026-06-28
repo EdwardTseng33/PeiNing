@@ -1,73 +1,175 @@
 # Munea (沐寧)
 
-> A personal AI butler that lives in your phone — speaks Taiwanese, remembers you, and reaches out before you have to ask.
+> 會記得你，也在乎你在乎的人。
 
-**Munea (沐寧)** is a personal AI butler app for elders (60+), bought by their adult children. It is presented as a warm, capable **30–35-year-old butler** — deliberately *not* an "elderly app" — and is built to feel like a real person to talk to: it listens and speaks naturally, perceives the day, remembers the person deeply, and quietly watches over their safety.
+**Munea (沐寧)** is an iOS-first smart-care companion app: a personal AI butler that lives in the phone, talks like a warm presence, remembers the person over time, helps with daily reminders, and keeps family in the loop when something feels off.
 
-- **Core audience:** elders 60+ (the "master" being served)
-- **Buyer:** their adult children (the user ≠ the payer)
-- **Platform:** iOS first (App Store), Android later
-- **Smart-health product line** — the pure-app rebirth of the Careon companion concept.
+The first product starts as an App Store app, then extends toward a wider smart-health service layer: family dashboards, health-data connections, proactive care workflows, and future hardware / home-care integrations.
 
----
-
-## What makes it different
-
-- **Taiwanese (台語) first** — the moat. Listen *and* speak, self-hosted, zero license fee. Competitors are English/Korean only.
-- **Proactive by design** — reaches out via **push** when the app is closed; full **voice conversation** when opened.
-- **Deeply personal** — remembers your topics, personality, family, mood, health, and life stories.
-- **Safety net built-in (P0)** — detects distress / anomalies → notifies family, refers to 1925 / 119. The AI is a *referrer*, never a therapist.
-- **Self-hosted** — the whole media stack runs on our own infrastructure (no per-minute third-party fees). This is what makes the business model viable.
+Munea is positioned as **smart care and companionship, not medical software**. It does not diagnose, treat, prescribe, or replace clinicians.
 
 ---
 
-## Architecture at a glance — Three Brains + One Face
+## Product Direction
 
-| Layer | Role | When it runs |
+- **Core user:** older adults and family members, with the first wedge around adult children buying or installing Munea for parents.
+- **First platform:** iOS first, Android later.
+- **First experience:** open the app and talk to a fullscreen butler face, with voice, subtitles, memory, and gentle proactive care.
+- **MVP scope:** Mandarin voice companionship, medication-alarm style reminders, emotional safety referral, child-led onboarding, and a family dashboard.
+- **Future moat:** Taiwanese voice support, richer avatar engines, deeper memory, health-data integrations, and hardware-assisted care services.
+
+The working north star is not "an elderly app." Munea should feel like a capable 30-35-year-old butler: warm, attentive, calm, and useful without making the user feel old.
+
+---
+
+## What Makes Munea Different
+
+1. **Memory with boundaries**
+   Munea remembers names, habits, preferences, family context, life stories, and recent emotional signals, but uses that memory to support daily life rather than diagnose.
+
+2. **Family-aware care**
+   The person using Munea and the person paying for Munea may be different. The product is designed for both: a simple companion experience for the elder and a calm care dashboard for family.
+
+3. **Three brains, one face**
+   The live conversation, background care planning, and safety referral logic are separated so the app can feel responsive while still becoming personal over time.
+
+4. **Proactive, but iOS-realistic**
+   When the app is closed, Munea reaches out through iOS push notifications. When opened, it becomes a full voice conversation with a talking face.
+
+5. **Non-medical by design**
+   Medication features are reminders, not advice. Emotional support is companionship, not therapy. Crisis handling routes to family or proper hotlines such as 1925 / 119.
+
+---
+
+## Current Prototype Status
+
+As of 2026-06-28, this repo is no longer just pre-build planning. It contains a runnable local prototype:
+
+- landing page, onboarding, elder app, and family dashboard
+- fullscreen butler-face conversation screen
+- six selectable characters
+- Gemini-backed prototype chat and TTS flow
+- local memory demo through `engine/user_profile.json`
+- Munea-style visual system and app shell
+
+Run locally:
+
+```bat
+run-munea-app.bat
+```
+
+Or:
+
+```powershell
+$env:GEMINI_API_KEY="..."
+py engine/server.py
+```
+
+Then open:
+
+```text
+http://localhost:8200
+```
+
+Secrets are expected in `engine/.env.local`, which is ignored by Git.
+
+---
+
+## Architecture Snapshot
+
+| Layer | Purpose | Current direction |
 |---|---|---|
-| 🧠 **Reflex brain** | The live conversation — natural turn-taking, graceful interruption | Hot path (must be fast) |
-| 🧠 **Butler brain** | Perception (daily context) + deep memory of the person | Background (no lag) |
-| 🧠 **Guardian brain** | Safety net — anomaly & crisis detection → family / hotline | Background |
-| 🙂 **The Face** | Talking avatar — choice of photorealistic (4: 2M / 2F) or 2D character | Only while app is open |
+| Reflex brain | Live voice conversation | Gemini 3.1 Flash Live direction; local demo currently uses Gemini generation + TTS |
+| Butler brain | Memory, schedules, context, daily care | Background rules + cheap AI when judgment is needed |
+| Guardian brain | Crisis / anomaly referral | Family notification and hotline referral, not medical judgment |
+| Face | Fullscreen butler presence | 2D/static now; Ditto / LiveAvatar PoCs decide real lip-sync path |
+| App shell | App Store delivery | Capacitor iOS shell planned; microphone bridge is the next go/no-go |
 
-> **Key principle:** everything that makes the butler *know you* runs in the background brain, so depth never slows the conversation.
-
-### Two interaction layers
-- **App closed → Push layer:** standard iOS push (always delivers). Warm message, the butler's face, quick-action buttons (e.g. "taken" / "snooze"), critical alerts for safety.
-- **App open → Conversation layer:** real-time voice + talking face + natural chat (where all the "feels human" work lives).
+Critical principle: **conversation continuity beats face fidelity**. If avatar rendering is slow or unavailable, the app should keep the voice conversation alive and degrade the face gracefully.
 
 ---
 
-## Tech approach
+## Roadmap
 
-- **Hybrid native app via Capacitor** — a *real* App Store app with native push, wrapping a reusable web core (~70% reused from our voice engine). One core → iOS first, Android later.
-- **Self-hosted media pipeline** — STT (Taiwanese) → brain → TTS → avatar render, all on our own infrastructure.
-- **Voice engine foundation:** `castle-voice-engine` (real-time voice, talking face, memory continuity, GPT-Realtime-2 integrated).
+### Phase 0 — Validate the hard gates
+
+- Capacitor microphone bridge on iPhone
+- avatar FPS / latency retest on proper GPU setup
+- App Store privacy and non-medical copy review
+
+### Phase 1 — First TestFlight path
+
+- real-time voice loop
+- basic butler memory
+- fullscreen face state machine
+- child-led onboarding
+- medication reminder flow
+- family dashboard skeleton
+
+### Phase 2 — Product depth
+
+- durable database-backed memory
+- Apple Health / health-data connections
+- push notification workflows
+- safety referral flows
+- points / subscription system
+- six-character production quality
+
+### Phase 3 — Service expansion
+
+- Taiwanese voice pipeline
+- richer avatar rendering
+- B2B2C care partnerships
+- optional hardware and home-care extensions
 
 ---
 
-## Repo structure
+## Repository Map
 
-```
-peining/
-├── README.md            # this file
+```text
+Munea/
+├── README.md
+├── STATUS.md
+├── BACKLOG.md
 ├── docs/
-│   ├── ARCHITECTURE.md  # the full system design
-│   └── ROADMAP.md       # build plan: validate → MVP → scale
-├── src/                 # web core (app UI + engine integration) — set up on macOS
-└── ios/  android/       # native shells (Capacitor) — added on macOS
+│   ├── 00-總綱-從這裡開始.md
+│   ├── SPEC-沐寧-v1-2026-06-28.md
+│   ├── ARCHITECTURE.md
+│   └── ROADMAP.md
+├── engine/
+│   ├── server.py
+│   ├── chat_engine.py
+│   ├── characters.json
+│   └── user_profile.json
+├── web/
+│   ├── index.html
+│   ├── family.html
+│   ├── onboarding.html
+│   ├── landing.html
+│   └── src/
+└── avatar-candidates/
 ```
+
+For current planning truth, read these first:
+
+1. `docs/00-總綱-從這裡開始.md`
+2. `docs/SPEC-沐寧-v1-2026-06-28.md`
+3. `STATUS.md`
+4. `BACKLOG.md`
+
+Some older documents still preserve research history and may contain superseded assumptions, especially around GPT-Realtime, full self-hosting language, old character names, and pre-6/28 screen structure. The SPEC file is the current authority.
 
 ---
 
-## Status
+## Development Notes
 
-**Pre-build.** Architecture & positioning locked (2026-06). Next: validate the two make-or-break unknowns —
-1. **Behaviour:** will elders tap a push and open the app?
-2. **Feasibility:** can we self-host photorealistic faces in real time on affordable hardware? (PoC, done the *right* way this time.)
+- Windows/local prototype: use `run-munea-app.bat`.
+- iOS packaging: requires macOS, Xcode, Apple Developer access, and Capacitor.
+- The local development folder may still contain historical `PeiNing/peining` path names; GitHub and product naming are now **Munea / 沐寧**.
+- Do not commit `engine/.env.local`.
 
-— then build the MVP on the existing voice engine.
+---
 
-## Development
+## Compliance Line
 
-iOS build, Apple Developer account, and native packaging are done on **macOS** (Xcode + Capacitor). The web core and docs are cross-platform.
+Munea is a companion and life-reminder product. It does not provide medical diagnosis, treatment, prescriptions, dosage advice, or psychological counseling. Health concerns should be handled by qualified professionals; emergencies should be routed to appropriate services such as 119 or 1925.
