@@ -8,6 +8,44 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 const OVERLAYS = ['call', 'med', 'chat', 'connect'];
 let callTimer = null;
 
+/* ===== [ENGINE] 真角色腦：頭像 ↔ 角色名、對話狀態、跟伺服器要回話＋語音 ===== */
+const AVA_TO_CHAR = {
+  'nening-real-female': '寧寧', 'companion-real-male': '阿宏',
+  'munea-2d-xiaoyun': '小昀', 'munea-2d-ayuan': '阿原',
+  'munea-2d-mimi': '咪咪', 'munea-2d-wangcai': '旺財',
+};
+let currentChar = '寧寧';        // 設定頁選的角色，決定腦＋聲音
+let chatHistory = [];            // 多輪對話脈絡
+let chatOpened = false;          // 這次進聊聊她有沒有先開過口
+let chatAudio = null;
+
+function playB64(b64) {
+  try { if (chatAudio) chatAudio.pause(); chatAudio = new Audio('data:audio/wav;base64,' + b64); chatAudio.play(); } catch (e) {}
+}
+// 跟真腦講話；沒有伺服器（純靜態 demo）就回 null、讓畫面自己退回規則版
+async function brainPost(url, body) {
+  try {
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
+}
+// 進聊聊頁：她像朋友一樣「主動先開口」（帶記憶＋今日狀態）
+async function enterChat() {
+  if (chatOpened) return;
+  chatOpened = true;
+  const cap = $('#chatCaption');
+  if (cap) cap.textContent = '⋯';
+  const r = await brainPost('/open', { char: currentChar });
+  if (r && r.reply) {
+    if (cap) cap.textContent = r.reply;
+    chatHistory.push({ role: 'model', text: r.reply });
+    if (r.audio) playB64(r.audio); else say(r.reply);
+  } else if (cap) {
+    cap.textContent = '我在這裡，今天過得好嗎？想聊什麼都可以。';   // 沒真腦時的暖場
+  }
+}
+
 function showView(id) {
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   const overlay = OVERLAYS.includes(id);
@@ -15,6 +53,7 @@ function showView(id) {
   $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === id));
   const el = $('#' + id); if (el) el.scrollTop = 0;
   if (id === 'call') startCallTimer(); else stopCallTimer();
+  if (id === 'chat') enterChat();
 }
 
 function startCallTimer() {
@@ -164,9 +203,22 @@ function init() {
     [/謝|你真好|感謝/, '不用謝，陪著你是我最想做的事。'],
   ];
   function chatReply(t) { for (const [re, r] of CHAT_RULES) if (re.test(t.toLowerCase())) return r; return '我聽見了，你慢慢說，我都在。'; }
-  function chatHandle(t) {
-    if ($('#chatCaption')) $('#chatCaption').textContent = `你說：「${t}」`;
-    setTimeout(() => { const r = chatReply(t); if ($('#chatCaption')) $('#chatCaption').textContent = r; say(r); }, 600);
+  async function chatHandle(t) {
+    const cap = $('#chatCaption');
+    if (cap) cap.textContent = `你說：「${t}」`;
+    chatHistory.push({ role: 'user', text: t });
+    setTimeout(() => { if (cap && cap.textContent.startsWith('你說')) cap.textContent = '⋯'; }, 450);
+    const r = await brainPost('/chat', { history: chatHistory, char: currentChar });
+    if (r && r.reply) {                              // 真腦回話＋真聲音
+      if (cap) cap.textContent = r.reply;
+      chatHistory.push({ role: 'model', text: r.reply });
+      if (r.audio) playB64(r.audio); else say(r.reply);
+    } else {                                          // 沒真腦 → 退回規則版（純靜態 demo 也能動）
+      const rr = chatReply(t);
+      if (cap) cap.textContent = rr;
+      chatHistory.push({ role: 'model', text: rr });
+      say(rr);
+    }
   }
   const chatMic = $('#chatMic');
   if (chatMic) chatMic.addEventListener('click', () => {
@@ -179,7 +231,17 @@ function init() {
     chatRec.onerror = chatRec.onend;
     chatRec.start();
   });
-  if ($('#chatEnd')) $('#chatEnd').addEventListener('click', () => showView('home'));
+  if ($('#chatEnd')) $('#chatEnd').addEventListener('click', () => { chatOpened = false; showView('home'); });
+
+  // 選角色 → 換那個角色的腦＋聲音＋名字，並重新認識（清對話）
+  const avatarPick = $('#avatarPick');
+  if (avatarPick) avatarPick.addEventListener('click', e => {
+    const o = e.target.closest('.avo:not(.soon)'); if (!o) return;
+    currentChar = AVA_TO_CHAR[o.dataset.ava] || '寧寧';
+    chatHistory = []; chatOpened = false;
+    const nm = $('.chat-name'); if (nm) nm.textContent = currentChar;
+    if ($('#chatCaption')) $('#chatCaption').textContent = `${currentChar}在這裡，想聊什麼都可以。`;
+  });
 
   if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => {};
 }
