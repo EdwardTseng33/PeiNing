@@ -2,7 +2,7 @@
 
 > 會記得你，也在乎你在乎的人。
 
-**Munea (沐寧)** is an iOS-first smart-care companion app: a personal AI butler that lives in the phone, talks like a warm presence, remembers the person over time, helps with daily reminders, and keeps family in the loop when something feels off.
+**Munea (沐寧)** is an iOS-first AI health-care companion app: a personal AI butler that lives in the phone, talks like a warm presence, remembers the person over time, helps with daily health routines, and keeps family connected when care should not be carried alone.
 
 The first product starts as an App Store app, then extends toward a wider smart-health service layer: family dashboards, health-data connections, proactive care workflows, and future hardware / home-care integrations.
 
@@ -12,13 +12,13 @@ Munea is positioned as **smart care and companionship, not medical software**. I
 
 ## Product Direction
 
-- **Core user:** older adults and family members, with the first wedge around adult children buying or installing Munea for parents.
+- **Core user:** people who want daily AI health-care companionship, plus the family members who care about them.
 - **First platform:** iOS first, Android later.
-- **First experience:** open the app and talk to a fullscreen butler face, with voice, subtitles, memory, and gentle proactive care.
-- **MVP scope:** Mandarin voice companionship, medication-alarm style reminders, emotional safety referral, child-led onboarding, and a family dashboard.
+- **First experience:** open the app and use `聊聊`: a fullscreen butler face with voice, subtitles, memory, and gentle proactive care.
+- **MVP scope:** Mandarin voice companionship, health-routine reminders, family interaction, emotional safety referral, onboarding, and a family dashboard.
 - **Future moat:** Taiwanese voice support, richer avatar engines, deeper memory, health-data integrations, and hardware-assisted care services.
 
-The working north star is not "an elderly app." Munea should feel like a capable 30-35-year-old butler: warm, attentive, calm, and useful without making the user feel old.
+The working north star is an AI health-care companion for everyday life. Older-adult care is an important first scenario, not the product boundary. Munea should feel like a capable 30-35-year-old butler: warm, attentive, calm, and useful without making the user feel labeled.
 
 ---
 
@@ -28,7 +28,7 @@ The working north star is not "an elderly app." Munea should feel like a capable
    Munea remembers names, habits, preferences, family context, life stories, and recent emotional signals, but uses that memory to support daily life rather than diagnose.
 
 2. **Family-aware care**
-   The person using Munea and the person paying for Munea may be different. The product is designed for both: a simple companion experience for the elder and a calm care dashboard for family.
+   Munea is designed for both individual use and family care. The person using Munea and the person checking in may be different, but the product should keep both sides calm, informed, and connected.
 
 3. **Three brains, one face**
    The live conversation, background care planning, and safety referral logic are separated so the app can feel responsive while still becoming personal over time.
@@ -45,7 +45,7 @@ The working north star is not "an elderly app." Munea should feel like a capable
 
 As of 2026-06-28, this repo is no longer just pre-build planning. It contains a runnable local prototype:
 
-- landing page, onboarding, elder app, and family dashboard
+- landing page, onboarding, app home, and family dashboard
 - fullscreen butler-face conversation screen
 - six selectable characters
 - Gemini-backed prototype chat and TTS flow
@@ -103,7 +103,7 @@ Critical principle: **conversation continuity beats face fidelity**. If avatar r
 - basic butler memory
 - fullscreen face state machine
 - child-led onboarding
-- medication reminder flow
+- health-routine reminder flow
 - family dashboard skeleton
 
 ### Phase 2 — Product depth

@@ -1,5 +1,5 @@
 /* Munea 沐寧 — 原型互動
- * 落實 Claude Design「沐寧 沐寧 配色」+ Elfie 融入（安心存摺 / 今天一起完成 / 媽媽這週）
+ * 落實 Claude Design「沐寧 沐寧 配色」+ Elfie 融入（安心存摺 / 今天一起完成 / 家人互動）
  * 標 [ENGINE] 處正式版接 castle-voice-engine（台灣中文語音 + 三顆腦 + 擬真 avatar；台語/英語後期）。 */
 
 const $  = (s) => document.querySelector(s);
@@ -37,6 +37,8 @@ function playB64(b64) {
 }
 // 跟真腦講話；沒有伺服器（純靜態 demo）就回 null、讓畫面自己退回規則版
 async function brainPost(url, body) {
+  const isStaticPreview = location.port === '8135' || location.protocol === 'file:';
+  if (isStaticPreview) return null;
   // 加超時護欄：語音腦連不上時，不卡死畫面（§6.5 降級鐵律：對話不斷、老實退回）
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), 6000);
@@ -104,19 +106,19 @@ function init() {
   // 首頁「跟寧寧聊聊」＝ 進同一個全屏臉（不再有獨立視訊頁）
   if ($('#startCall')) $('#startCall').addEventListener('click', () => showView('chat'));
   // 用藥服務窗（獨立功能、保留）
-  if ($('#toMed')) $('#toMed').addEventListener('click', () => { showView('med'); say('陳奶奶，吃藥時間到囉。'); });
+  if ($('#toMed')) $('#toMed').addEventListener('click', () => { showView('med'); say('吃藥時間到囉。'); });
   if ($('#medTaken')) $('#medTaken').addEventListener('click', () => { say('好，記下來了，連續六天，你真棒。'); showView('home'); });
   if ($('#medSnooze')) $('#medSnooze').addEventListener('click', () => showView('home'));
 
   // 連接裝置（狀態頁資料條 / 設定裝置區 → 串接三方裝置引導）
   if ($('#srcStrip')) $('#srcStrip').addEventListener('click', () => showView('connect'));
   if ($('#setDevices')) $('#setDevices').addEventListener('click', () => showView('connect'));
-  if ($('#setProfile')) $('#setProfile').addEventListener('click', () => say('這裡可以改媽媽的頭像、名稱、對家人顯示的稱呼、年齡、所在地。'));
+  if ($('#setProfile')) $('#setProfile').addEventListener('click', () => say('這裡可以改頭像、名稱、對家人顯示的稱呼、年齡、所在地。'));
   if ($('#connectBack')) $('#connectBack').addEventListener('click', () => showView('status'));
   $$('#connect .cn-btn').forEach(b => b.addEventListener('click', () => {
     const on = b.classList.toggle('done');
     b.textContent = on ? '✓ 已連接' : (b.dataset.label || '連接');
-    if (on) say('好，連上了，之後媽媽的數據我會自動看著。');
+    if (on) say('好，連上了，之後健康資料我會自動留意。');
   }));
 
   // 今天一起完成（任務打勾）
