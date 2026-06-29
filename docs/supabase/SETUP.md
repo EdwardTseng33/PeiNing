@@ -159,5 +159,5 @@ Once the Supabase project is created:
 
 1. Add env values to local backend environment.
 2. Add a Supabase database adapter in `engine/`.
-3. Change `/app-profile`, `/companion-profile`, `/entitlements`, `/privacy-export`, and `/account-deletion` to use Supabase behind a feature flag.
+3. `/app-profile`, `/companion-profile`, `/entitlements`, `/privacy-export`, and `/account-deletion` now have Supabase adapter paths behind the `MUNEA_DATABASE_PROVIDER=supabase` feature flag, with JSON fallback preserved.
 4. Keep JSON fallback for local offline prototype only.

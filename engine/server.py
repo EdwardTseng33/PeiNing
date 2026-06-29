@@ -325,11 +325,23 @@ def normalize_billing_store(data=None):
 
 
 def load_billing_store():
+    try:
+        remote_store = data_backend().load_billing_store()
+        if remote_store:
+            return normalize_billing_store(remote_store)
+    except Exception:
+        pass
     return normalize_billing_store(read_json_file(BILLING_STORE_PATH, {}))
 
 
 def save_billing_store(data):
     store = normalize_billing_store({**data, "updatedAt": utc_now()})
+    try:
+        remote_store = data_backend().save_billing_store(store)
+        if remote_store:
+            store = normalize_billing_store(remote_store)
+    except Exception:
+        pass
     write_json_file(BILLING_STORE_PATH, store)
     return store
 
@@ -416,6 +428,12 @@ def normalize_privacy_requests_store(data=None):
 
 
 def load_privacy_requests_store():
+    try:
+        remote_store = data_backend().load_privacy_requests_store()
+        if remote_store:
+            return normalize_privacy_requests_store(remote_store)
+    except Exception:
+        pass
     return normalize_privacy_requests_store(read_json_file(PRIVACY_REQUESTS_PATH, {}))
 
 
@@ -427,6 +445,12 @@ def save_privacy_requests_store(data):
 
 def append_privacy_request(req_type, data=None):
     data = data or {}
+    try:
+        remote_request = data_backend().append_privacy_request(req_type, data)
+        if remote_request:
+            return normalize_privacy_request(remote_request)
+    except Exception:
+        pass
     store = load_privacy_requests_store()
     req = normalize_privacy_request({**data, "type": req_type, "requestedAt": utc_now()})
     store["requests"].append(req)

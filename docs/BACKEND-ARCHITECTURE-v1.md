@@ -13,6 +13,7 @@ Current state:
 - Local JSON stores keep the prototype runnable.
 - Supabase schema draft exists in `supabase/sql/001_initial_munea_schema.sql`.
 - Supabase-ready backend adapter exists in `engine/supabase_adapter.py`.
+- Supabase adapter now covers companion/app profile, subscription/usage ledger reads, billing save mapping, and privacy request creation/listing with JSON fallback.
 - Production API contracts are partially represented in `engine/server.py`.
 - Admin and analytics are not built yet, but their data model must be planned now.
 
@@ -326,8 +327,8 @@ Do not build a broad CRM first. The admin MVP should answer: what happened, who 
 - [x] Implement Supabase adapter for companion profile.
 - [x] Implement Supabase app profile aggregate adapter for account, person, family group, family memberships, and companion profile.
 - [x] Keep JSON fallback active until Supabase env and seeded ids are configured.
-- Add entitlements adapter.
-- Add privacy requests adapter.
+- [x] Add entitlements adapter for subscription and usage ledger reads/writes.
+- [x] Add privacy requests adapter for export/deletion request creation and listing.
 
 ### Phase C: Auth And Family
 

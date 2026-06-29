@@ -119,6 +119,17 @@ assert profile["displayName"] == "Nening"
 assert profile["nameTouched"] is True
 
 def fake_request(method, table, query=None, payload=None, prefer=None):
+    if method in ("POST", "PATCH"):
+        if table == "subscription_ledger":
+            return [{**payload, "id": "sub-ledger-1", "updated_at": "2026-06-29T00:00:00Z"}]
+        if table == "usage_ledger":
+            return [{**payload, "id": "usage-ledger-1", "updated_at": "2026-06-29T00:00:00Z"}]
+        if table == "privacy_requests":
+            return [{**payload, "id": "privacy-request-1", "requested_at": "2026-06-29T00:00:00Z"}]
+        if table == "companion_profiles":
+            return [{**payload, "updated_at": "2026-06-29T00:00:00Z"}]
+        raise AssertionError(f"Unexpected write table: {table}")
+
     assert method == "GET"
     fixtures = {
         "accounts": [{
@@ -148,6 +159,34 @@ def fake_request(method, table, query=None, payload=None, prefer=None):
             "name_touched": True,
             "updated_at": "2026-06-29T00:00:00Z",
         }],
+        "subscription_ledger": [{
+            "account_id": env["MUNEA_SUPABASE_ACCOUNT_ID"],
+            "platform": "ios",
+            "provider": "revenuecat",
+            "product_id": "munea.premium.monthly",
+            "original_transaction_id": "1000000000000001",
+            "status": "active",
+            "active_plan": "premium",
+            "entitlements": {"voiceCompanion": True, "realtimeAvatar": True},
+            "verified_at": "2026-06-29T00:00:00Z",
+            "expires_at": "2026-07-29T00:00:00Z",
+            "will_renew": True,
+            "updated_at": "2026-06-29T00:00:00Z",
+        }],
+        "usage_ledger": [
+            {"period": "2026-06", "metric": "voice_minutes", "used": 12, "granted": 300},
+            {"period": "2026-06", "metric": "avatar_minutes", "used": 4, "granted": 60},
+        ],
+        "privacy_requests": [{
+            "id": "privacy-request-1",
+            "account_id": env["MUNEA_SUPABASE_ACCOUNT_ID"],
+            "request_type": "export",
+            "status": "requested",
+            "reason": "test",
+            "requires_reauth": True,
+            "subscription_notice_required": False,
+            "requested_at": "2026-06-29T00:00:00Z",
+        }],
     }
     return fixtures[table]
 
@@ -156,9 +195,26 @@ store = adapter.load_app_profile_store()
 assert store["account"]["locale"] == "zh-TW"
 assert store["familyGroup"]["members"][0]["role"] == "primary_user"
 assert store["companionProfiles"][env["MUNEA_SUPABASE_PERSON_ID"]]["displayName"] == "Nening"
+remote_billing = adapter.load_billing_store()
+assert remote_billing["activePlan"] == "premium"
+assert remote_billing["subscription"]["status"] == "active"
+assert remote_billing["usageLedger"]["voiceMinutesUsed"] == 12
+saved_billing = adapter.save_billing_store({
+    "activePlan": "premium",
+    "provider": "revenuecat",
+    "subscription": {"status": "active", "productId": "munea.premium.monthly"},
+    "entitlements": {"voiceCompanion": True, "realtimeAvatar": True},
+    "usageLedger": {"period": "2026-06", "voiceMinutesUsed": 1, "avatarMinutesUsed": 1},
+})
+assert saved_billing["accountId"] == env["MUNEA_SUPABASE_ACCOUNT_ID"]
+privacy_store = adapter.load_privacy_requests_store()
+assert privacy_store["requests"][0]["type"] == "export"
+privacy_req = adapter.append_privacy_request("account_deletion", {"reason": "test"})
+assert privacy_req["type"] == "account_deletion"
+assert privacy_req["subscriptionNoticeRequired"] is True
 print("supabase adapter", adapter.status()["enabled"])
 '@ | python -
-Pass "Supabase adapter enables only when backend env is complete"
+Pass "Supabase adapter supports profile, billing, usage, and privacy contracts"
 
 Step "Billing and entitlement contract"
 @'
