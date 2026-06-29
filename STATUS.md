@@ -30,6 +30,7 @@
 - ✅ 資料權利底座：新增 `engine/privacy_requests.json`、`/privacy-export`、`/account-deletion`，補上 App Store 帳號刪除與資料匯出合約。
 - ✅ Supabase DB bootstrap：新增 `supabase/sql/001_initial_munea_schema.sql`、`docs/supabase/SETUP.md`、`docs/supabase/munea-env.example.txt`，先完成正式 DB schema / RLS / grants 草案。
 - ✅ Backend Architecture v1：新增 `docs/BACKEND-ARCHITECTURE-v1.md`，定義 API surface、Supabase/RLS、訂閱權益、資料權利、管理後台 MVP 與北極星數據板。
+- ✅ Supabase Adapter v1：新增 `engine/supabase_adapter.py`，`/companion-profile` 與 `/app-profile` 回傳 backend 狀態；Supabase env 完整時可啟用，否則安全回 JSON fallback。
 - ✅ `scripts/smoke.ps1` 新增 `node --check web/src/app.js`，避免前端 runtime 改動沒被驗收。
 - ✅ `npm run smoke` 全綠：`/open`、`/chat`、`/voice-note`、語音 payload、JS syntax 都通過。
 

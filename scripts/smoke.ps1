@@ -22,7 +22,7 @@ function Warn($message) {
 }
 
 Step "Python compile"
-python -m py_compile engine\server.py engine\chat_engine.py engine\nening_brain.py engine\characters_demo.py
+python -m py_compile engine\server.py engine\supabase_adapter.py engine\chat_engine.py engine\nening_brain.py engine\characters_demo.py
 Pass "Python files compile"
 
 Step "JSON parse"
@@ -73,9 +73,11 @@ assert profile["nameTouched"] is True
 resp = server.companion_profile_response({"action": "load"})
 assert resp["ok"] is True
 assert "templateId" in resp["profile"]
+assert resp["backend"]["fallback"] == "json"
 store_resp = server.app_profile_response({"action": "load"})
 assert store_resp["ok"] is True
 assert store_resp["store"]["primaryCareRecipientId"] in store_resp["store"]["companionProfiles"]
+assert store_resp["backend"]["fallback"] == "json"
 normalized_store = server.normalize_app_profile_store({
     "companionProfile": {"templateId": "real-f", "displayName": "Munea", "nameTouched": True},
 })
@@ -85,6 +87,38 @@ assert active["displayName"] == "Munea"
 print("companion profile", profile["templateId"], profile["displayName"])
 '@ | python -
 Pass "Companion profile and app store contracts are valid"
+
+Step "Supabase adapter contract"
+@'
+import os, sys
+os.environ.setdefault("GEMINI_API_KEY", "smoke-test-key")
+sys.path.insert(0, "engine")
+import supabase_adapter
+
+blank = supabase_adapter.make_adapter(env={})
+assert blank.enabled() is False
+assert "SUPABASE_URL" in blank.status()["missing"]
+
+env = {
+    "MUNEA_DATABASE_PROVIDER": "supabase",
+    "SUPABASE_URL": "https://example.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY": "service-role-test-key",
+    "MUNEA_SUPABASE_ACCOUNT_ID": "11111111-1111-4111-8111-111111111111",
+    "MUNEA_SUPABASE_PERSON_ID": "22222222-2222-4222-8222-222222222222",
+}
+adapter = supabase_adapter.make_adapter(env=env)
+assert adapter.enabled() is True
+row = adapter.profile_to_companion_row({"templateId": "real-f", "displayName": "Munea", "nameTouched": True})
+assert row["account_id"] == env["MUNEA_SUPABASE_ACCOUNT_ID"]
+assert row["person_id"] == env["MUNEA_SUPABASE_PERSON_ID"]
+assert row["template_id"] == "real-f"
+profile = adapter.companion_row_to_profile({"template_id": "nening-real-female", "display_name": "Nening", "name_touched": True})
+assert profile["templateId"] == "nening-real-female"
+assert profile["displayName"] == "Nening"
+assert profile["nameTouched"] is True
+print("supabase adapter", adapter.status()["enabled"])
+'@ | python -
+Pass "Supabase adapter enables only when backend env is complete"
 
 Step "Billing and entitlement contract"
 @'
@@ -147,6 +181,22 @@ if "auth.uid()" not in sql:
 print("supabase tables", len(required_tables))
 '@ | python -
 Pass "Supabase schema includes tables, RLS, and grants"
+
+Step "Secret boundary contract"
+@'
+from pathlib import Path
+
+web_hits = []
+for path in Path("web").rglob("*"):
+    if path.is_file() and path.suffix.lower() in {".html", ".js", ".css", ".json"}:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        if "SUPABASE_SERVICE_ROLE_KEY" in text or "service_role" in text:
+            web_hits.append(str(path))
+if web_hits:
+    raise SystemExit("Service role reference leaked into web files: " + ", ".join(web_hits))
+print("service role stays backend-only")
+'@ | python -
+Pass "Service role references are not in web assets"
 
 Step "Backend architecture document contract"
 @'

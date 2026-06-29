@@ -12,6 +12,7 @@
 import os, sys, json, base64, io, wave, time, posixpath
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import chat_engine as eng
+import supabase_adapter
 from google.genai import types
 
 if not os.environ.get("GEMINI_API_KEY"):
@@ -83,6 +84,16 @@ def read_json_file(path, fallback=None):
 def write_json_file(path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def data_backend():
+    return supabase_adapter.make_adapter()
+
+
+def data_backend_status():
+    status = data_backend().status()
+    status["fallback"] = "json"
+    return status
 
 
 def load_legacy_companion_profile():
@@ -198,11 +209,23 @@ def active_companion_profile(store=None):
 
 
 def load_companion_profile():
+    try:
+        remote_profile = data_backend().load_companion_profile()
+        if remote_profile:
+            return normalize_companion_profile(remote_profile)
+    except Exception:
+        pass
     return active_companion_profile(load_app_profile_store())
 
 
 def save_companion_profile(data):
     profile = normalize_companion_profile({**data, "updatedAt": utc_now()})
+    try:
+        remote_profile = data_backend().save_companion_profile(profile)
+        if remote_profile:
+            profile = normalize_companion_profile(remote_profile)
+    except Exception:
+        pass
     store = load_app_profile_store()
     store["companionProfiles"][store["primaryCareRecipientId"]] = profile
     save_app_profile_store(store)
@@ -217,7 +240,7 @@ def companion_profile_response(data):
     else:
         profile = load_companion_profile()
     template = COMPANION_TEMPLATES[profile["templateId"]]
-    return {"ok": True, "profile": profile, "backendChar": template["backendChar"]}
+    return {"ok": True, "profile": profile, "backendChar": template["backendChar"], "backend": data_backend_status()}
 
 
 def app_profile_response(data):
@@ -229,7 +252,7 @@ def app_profile_response(data):
         store = load_app_profile_store()
     else:
         store = load_app_profile_store()
-    return {"ok": True, "store": store, "activeCompanionProfile": active_companion_profile(store)}
+    return {"ok": True, "store": store, "activeCompanionProfile": active_companion_profile(store), "backend": data_backend_status()}
 
 
 def default_billing_store():
@@ -570,6 +593,7 @@ class H(BaseHTTPRequestHandler):
                 "service": "munea-local-engine",
                 "time": utc_now(),
                 "contracts": ["app-profile", "companion-profile", "entitlements", "voice-session", "privacy-export", "account-deletion"],
+                "backend": data_backend_status(),
             })
             return
         if path in ("/", ""):

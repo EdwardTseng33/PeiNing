@@ -12,6 +12,7 @@ Current state:
 
 - Local JSON stores keep the prototype runnable.
 - Supabase schema draft exists in `supabase/sql/001_initial_munea_schema.sql`.
+- Supabase-ready backend adapter exists in `engine/supabase_adapter.py`.
 - Production API contracts are partially represented in `engine/server.py`.
 - Admin and analytics are not built yet, but their data model must be planned now.
 
@@ -321,8 +322,10 @@ Do not build a broad CRM first. The admin MVP should answer: what happened, who 
 
 ### Phase B: Database Adapter
 
-- Add backend config for JSON fallback vs Supabase.
-- Implement Supabase adapter for app profile and companion profile.
+- [x] Add backend config for JSON fallback vs Supabase.
+- [x] Implement Supabase adapter for companion profile.
+- [x] Keep JSON fallback active until Supabase env and seeded ids are configured.
+- [ ] Implement full app profile aggregate reads from Supabase.
 - Add entitlements adapter.
 - Add privacy requests adapter.
 
@@ -347,4 +350,3 @@ Do not build a broad CRM first. The admin MVP should answer: what happened, who 
 - Data export worker.
 - Privacy policy and App Store privacy labels.
 - Real iPhone microphone/playback/push/restore-purchase QA.
-

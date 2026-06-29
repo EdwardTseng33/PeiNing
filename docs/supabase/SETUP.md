@@ -88,6 +88,32 @@ The migration path is:
 local JSON prototype -> Supabase tables -> backend API reads/writes Supabase
 ```
 
+## Backend Adapter Status
+
+The repo now includes `engine/supabase_adapter.py`.
+
+Current behavior:
+
+- Default backend remains JSON fallback.
+- Set `MUNEA_DATABASE_PROVIDER=supabase` plus Supabase URL, service role key, account id, and person id to enable the adapter.
+- `/healthz`, `/app-profile`, and `/companion-profile` expose backend status so we can verify whether the process is using JSON fallback or Supabase.
+
+Required backend-only environment values:
+
+```text
+MUNEA_DATABASE_PROVIDER=supabase
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+MUNEA_SUPABASE_ACCOUNT_ID=...
+MUNEA_SUPABASE_PERSON_ID=...
+MUNEA_SUPABASE_FAMILY_GROUP_ID=...
+```
+
+Security rule:
+
+- `SUPABASE_SERVICE_ROLE_KEY` must only exist in backend environment files or hosting secrets.
+- It must never be copied into `web/`, Capacitor bundles, public JavaScript, screenshots, or chat.
+
 ## Environment Variables
 
 Use the template:
@@ -134,4 +160,3 @@ Once the Supabase project is created:
 2. Add a Supabase database adapter in `engine/`.
 3. Change `/app-profile`, `/companion-profile`, `/entitlements`, `/privacy-export`, and `/account-deletion` to use Supabase behind a feature flag.
 4. Keep JSON fallback for local offline prototype only.
-
