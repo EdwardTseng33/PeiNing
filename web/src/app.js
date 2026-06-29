@@ -21,18 +21,13 @@ const VOICE_PROVIDER_MODES = Object.freeze({
 const TWO_D_AVATARS = new Set(['munea-2d-xiaoyun', 'munea-2d-ayuan', 'munea-2d-mimi', 'munea-2d-wangcai']);
 
 /* ===== [ENGINE] 角色模板 vs 使用者命名：模板決定外觀/聲音/人格，名字由使用者取 ===== */
-const CHARACTER_TEMPLATES = {
-  'nening-real-female': { backendChar: '寧寧', defaultName: '寧寧', templateLabel: '溫柔型 · 像家人，會照看', homeAsset: 'avatars/nening-real-female-full.png', fullAsset: 'avatars/nening-real-female-full.png' },
-  'companion-real-male': { backendChar: '阿宏', defaultName: '阿宏', templateLabel: '沉穩型 · 像大哥，很可靠' },
-  'munea-2d-xiaoyun': { backendChar: '小昀', defaultName: '小昀', templateLabel: '開朗型 · 像朋友，很有朝氣' },
-  'munea-2d-ayuan': { backendChar: '阿原', defaultName: '阿原', templateLabel: '隨和型 · 鄰家感，好聊天' },
-  'munea-2d-mimi': { backendChar: '咪咪', defaultName: '咪咪', templateLabel: '貓咪型 · 陪伴感，有個性' },
-  'munea-2d-wangcai': { backendChar: '旺財', defaultName: '旺財', templateLabel: '狗狗型 · 熱情，很黏人' },
-};
-let currentChar = CHARACTER_TEMPLATES['nening-real-female'].backendChar; // 後端角色模板，決定腦＋聲音
-let currentAvatarId = 'nening-real-female';
-let companionDisplayName = CHARACTER_TEMPLATES[currentAvatarId].defaultName;
-let companionNameTouched = false;
+const CompanionProfile = window.MuneaCompanionProfile;
+const CHARACTER_TEMPLATES = CompanionProfile.templates;
+let savedCompanionProfile = CompanionProfile.loadProfile();
+let currentAvatarId = savedCompanionProfile.templateId;
+let companionDisplayName = savedCompanionProfile.displayName;
+let companionNameTouched = savedCompanionProfile.nameTouched;
+let currentChar = CompanionProfile.templateFor(currentAvatarId).backendChar; // 後端角色模板，決定腦＋聲音
 let chatHistory = [];            // 多輪對話脈絡
 let chatOpened = false;          // 這次進聊聊她有沒有先開過口
 let chatAudio = null;
@@ -131,20 +126,28 @@ function setCallHint(text) {
   if (cap) cap.textContent = text;
 }
 function templateFor(avatarId = currentAvatarId) {
-  return CHARACTER_TEMPLATES[avatarId] || CHARACTER_TEMPLATES['nening-real-female'];
+  return CompanionProfile.templateFor(avatarId);
+}
+function persistCompanionProfile() {
+  savedCompanionProfile = CompanionProfile.saveProfile({
+    templateId: currentAvatarId,
+    displayName: companionDisplayName.trim() || templateFor().defaultName,
+    nameTouched: companionNameTouched,
+  });
 }
 function syncCompanionUI() {
   const t = templateFor();
   const display = companionDisplayName.trim() || t.defaultName;
   const src = 'avatars/' + currentAvatarId + '.png';
-  const homeSrc = t.homeAsset || src;
-  const fullSrc = t.fullAsset || src;
+  const thumbSrc = t.thumbAsset || src;
+  const homeSrc = t.homeAsset || thumbSrc;
+  const fullSrc = t.fullAsset || homeSrc;
   const homeName = $('#companionHomeName'); if (homeName) homeName.textContent = display;
   const chatName = $('#chatName'); if (chatName) chatName.textContent = display;
   const summary = $('#companionSummary'); if (summary) summary.textContent = `AI 健康照護 · 陪伴角色：${display}`;
   const settingName = $('#settingsCompanionName'); if (settingName) settingName.textContent = display;
   const settingLabel = $('#settingsTemplateLabel'); if (settingLabel) settingLabel.textContent = t.templateLabel;
-  const settingImg = $('#settingsCompanionImg'); if (settingImg) settingImg.src = src;
+  const settingImg = $('#settingsCompanionImg'); if (settingImg) settingImg.src = thumbSrc;
   const nameInput = $('#companionNameInput');
   if (nameInput && document.activeElement !== nameInput && nameInput.value !== display) nameInput.value = display;
   const fimg = $('#faceImg'); if (fimg) fimg.src = fullSrc;
@@ -155,13 +158,16 @@ function syncCompanionUI() {
 function setCompanionName(name) {
   companionDisplayName = (name || '').slice(0, 12);
   companionNameTouched = companionDisplayName.trim().length > 0;
+  persistCompanionProfile();
   syncCompanionUI();
 }
 function setCompanionTemplate(avatarId) {
-  const t = templateFor(avatarId);
-  currentAvatarId = avatarId;
+  const templateId = CompanionProfile.normalizeTemplateId(avatarId);
+  const t = templateFor(templateId);
+  currentAvatarId = templateId;
   currentChar = t.backendChar;
   if (!companionNameTouched) companionDisplayName = t.defaultName;
+  persistCompanionProfile();
   chatHistory = [];
   chatOpened = false;
   voiceProvider.close();
@@ -510,6 +516,8 @@ function init() {
     companionNameInput.addEventListener('input', e => setCompanionName(e.target.value));
     companionNameInput.addEventListener('blur', () => {
       if (!companionDisplayName.trim()) companionDisplayName = templateFor().defaultName;
+      companionNameTouched = companionDisplayName.trim().length > 0;
+      persistCompanionProfile();
       syncCompanionUI();
     });
   }

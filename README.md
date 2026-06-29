@@ -93,6 +93,8 @@ Companion identity is intentionally split: `display_name` is what the user calls
 
 Chat is designed as speech-to-speech by default. The main experience should feel like a video call, not a transcript reader; visible text is limited to call state, safety prompts, and future optional accessibility captions.
 
+The prototype now uses one browser-side Companion Profile across onboarding, Home, Chat, and Settings. In production, the same `templateId` / `displayName` shape should move from local storage into the account database.
+
 ---
 
 ## Roadmap

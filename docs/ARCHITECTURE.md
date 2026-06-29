@@ -119,6 +119,14 @@ Rules:
 - Family members may later have their own relationship-specific nicknames for the same companion.
 - Database design should store `display_name` and `template_id` separately in the companion profile.
 
+Current prototype contract:
+
+- `web/src/companion-profile.js` is the single browser-side Companion Profile source of truth.
+- Onboarding writes `templateId` and `displayName` before entering the app.
+- Home, Chat, and Settings all read the same profile.
+- Settings writes back to the same profile when the user renames the companion or changes templates.
+- Prototype persistence uses `localStorage`; production should move the same shape into the account/family database.
+
 ## iOS Shell
 
 Munea uses Capacitor so the web core can become an iOS app first, Android later.
