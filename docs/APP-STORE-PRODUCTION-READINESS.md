@@ -42,6 +42,7 @@ Munea requirements before App Review:
 Sources:
 
 - Apple App Review Guidelines: https://developer.apple.com/app-store/review/guidelines/
+- Account deletion in apps: https://developer.apple.com/support/offering-account-deletion-in-your-app/
 - App privacy details: https://developer.apple.com/help/app-store-connect/reference/app-privacy-details
 - StoreKit: https://developer.apple.com/documentation/storekit
 - App Store Server API: https://developer.apple.com/documentation/appstoreserverapi
@@ -119,6 +120,8 @@ Current implemented guardrails:
 - `/healthz` exposes lightweight service and contract status.
 - API errors return stable `ok:false` payloads with `requestId`; exception details are hidden unless `MUNEA_DEBUG_API=1`.
 - `/app-profile`, `/companion-profile`, and `/entitlements` are separate contracts.
+- `/privacy-export` returns a local JSON export package for the account/family/profile/billing/privacy ledger.
+- `/account-deletion` returns the deletion status contract and production deletion steps.
 
 Production guardrails still required:
 
@@ -130,6 +133,42 @@ Production guardrails still required:
 - server-side model/provider keys only.
 - audit logging for entitlement changes, family permission changes, safety events, and account deletion.
 - encryption at rest for production DB and object storage.
+
+## Data Rights: Export And Account Deletion
+
+Apple expects apps that support account creation to also let users initiate account deletion from inside the app. Munea should treat this as a first-class product surface, not a support-only workflow.
+
+Current local prototype:
+
+- `engine/privacy_requests.json` is the local data-rights ledger.
+- `POST /privacy-export` returns a JSON export preview package.
+- `POST /account-deletion` returns current deletion status and the required production steps.
+
+Production account deletion flow:
+
+1. User opens Settings -> Account -> Delete account.
+2. App explains what will be deleted, what may be retained for legal/payment/audit obligations, and how active subscriptions are handled.
+3. User reauthenticates.
+4. Backend records an `account_deletion` request.
+5. Backend cancels or guides cancellation for App Store subscription where applicable.
+6. Backend soft-deletes user-facing records immediately.
+7. Backend hard-deletes or anonymizes eligible data after the retention window.
+8. Backend sends confirmation.
+
+Production data export flow:
+
+1. User opens Settings -> Account -> Export my data.
+2. User reauthenticates.
+3. Backend creates an asynchronous export job.
+4. Export package includes profile, family group, companion profile, reminder data, conversation summaries, safety events, subscription ledger, and usage ledger.
+5. Export package excludes provider secrets, raw internal logs, model prompts that are not user data, and unrelated family-member private data.
+
+Retention boundary:
+
+- Raw transcripts should not become the default retained record.
+- Conversation summaries may be retained for memory until deletion or retention expiry.
+- Safety events may need a separate retention policy for user protection and audit.
+- Billing records may be retained as required for refund, tax, platform, and abuse-prevention obligations.
 
 ## Production Database Shape
 
@@ -187,4 +226,3 @@ Before public launch:
 - crash and error monitoring installed.
 - delete/export request path ready.
 - safety escalation copy reviewed.
-

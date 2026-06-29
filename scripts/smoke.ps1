@@ -28,7 +28,7 @@ Pass "Python files compile"
 Step "JSON parse"
 @'
 import json, pathlib
-for p in ["engine/characters.json", "engine/user_profile.json", "engine/companion_profile.json", "engine/app_profile_store.json", "engine/billing_store.json"]:
+for p in ["engine/characters.json", "engine/user_profile.json", "engine/companion_profile.json", "engine/app_profile_store.json", "engine/billing_store.json", "engine/privacy_requests.json"]:
     json.loads(pathlib.Path(p).read_text(encoding="utf-8"))
     print(f"{p} OK")
 '@ | python -
@@ -109,6 +109,31 @@ assert normalized["entitlements"]["realtimeAvatar"] is True
 print("billing plan", normalized["activePlan"])
 '@ | python -
 Pass "Billing entitlements normalize correctly"
+
+Step "Privacy data-rights contract"
+@'
+import os, sys
+os.environ.setdefault("GEMINI_API_KEY", "smoke-test-key")
+sys.path.insert(0, "engine")
+import server
+
+req = server.normalize_privacy_request({"requestType": "account_deletion", "reason": "test"})
+assert req["type"] == "account_deletion"
+assert req["requiresReauth"] is True
+assert req["subscriptionNoticeRequired"] is True
+
+export = server.privacy_export_response({"action": "preview"})
+assert export["ok"] is True
+assert export["request"]["status"] == "preview"
+assert "billing" in export["exportPackage"]
+assert "privacyRequests" in export["exportPackage"]
+
+deletion = server.account_deletion_response({"action": "status"})
+assert deletion["ok"] is True
+assert deletion["requiresReauth"] is True
+print("privacy status", deletion["status"])
+'@ | python -
+Pass "Privacy export and account deletion contracts are valid"
 
 Step "Frontend JavaScript syntax"
 node --check web\src\app.js
@@ -241,7 +266,21 @@ Step "API /healthz"
 $health = Invoke-RestMethod -Uri "$BaseUrl/healthz" -Method Get -TimeoutSec 30
 if (-not $health.ok) { throw "/healthz returned not ok" }
 if ($health.contracts -notcontains "entitlements") { throw "/healthz missing entitlements contract" }
+if ($health.contracts -notcontains "privacy-export") { throw "/healthz missing privacy-export contract" }
+if ($health.contracts -notcontains "account-deletion") { throw "/healthz missing account-deletion contract" }
 Pass "/healthz returns service contracts"
+
+Step "API /privacy-export"
+$privacyExport = Invoke-RestMethod -Uri "$BaseUrl/privacy-export" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"action":"preview"}' -TimeoutSec 30
+if (-not $privacyExport.ok) { throw "/privacy-export returned not ok" }
+if (-not $privacyExport.exportPackage.billing) { throw "/privacy-export missing billing package" }
+Pass "/privacy-export returns local export package"
+
+Step "API /account-deletion"
+$deletion = Invoke-RestMethod -Uri "$BaseUrl/account-deletion" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"action":"status"}' -TimeoutSec 30
+if (-not $deletion.ok) { throw "/account-deletion returned not ok" }
+if (-not $deletion.requiresReauth) { throw "/account-deletion should require reauth" }
+Pass "/account-deletion returns deletion status contract"
 
 Step "API /chat"
 $chatBody = '{"char":"\u5be7\u5be7","history":[{"role":"user","text":"\u6211\u4eca\u5929\u60f3\u804a\u804a\u5065\u5eb7\u548c\u5bb6\u4eba"}]}'

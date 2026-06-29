@@ -125,10 +125,13 @@ Current prototype contract:
 - `engine/companion_profile.json` remains the legacy single-profile mirror for compatibility.
 - `engine/app_profile_store.json` is the local account/family/person/companion store placeholder.
 - `engine/billing_store.json` is the local subscription entitlement and usage ledger placeholder.
+- `engine/privacy_requests.json` is the local data export / account deletion request ledger placeholder.
 - `POST /companion-profile` loads or saves the same `templateId` / `displayName` shape.
 - `POST /app-profile` loads the broader local store so account and family features can attach without changing the companion contract.
 - `POST /entitlements` returns subscription state and feature gates.
 - `POST /subscription-event` accepts local notification-shaped subscription events; production must verify Apple signed payloads before granting paid access.
+- `POST /privacy-export` returns a local JSON export package for the account/family/profile/billing/privacy ledger.
+- `POST /account-deletion` tracks the in-app account deletion request contract.
 - Onboarding writes `templateId` and `displayName` before entering the app.
 - Home, Chat, and Settings all read the same profile.
 - Settings writes back to the same profile when the user renames the companion or changes templates.
@@ -172,6 +175,8 @@ Minimum tables / collections:
 Every production API must carry a tenant scope such as `family_group_id` and user/person scope. Cross-family memory leakage is a P0 failure.
 
 Payment and premium feature access must be server-authoritative. The frontend can start or restore purchases, but `/entitlements` and the backend subscription ledger decide paid status, family limits, premium Avatar access, and usage balances.
+
+Data export and account deletion must also be server-authoritative. The app may present the UI, but production deletion/export jobs must run behind authenticated backend workflows with audit logs and retention rules.
 
 ## Development Order
 

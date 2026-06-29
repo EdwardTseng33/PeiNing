@@ -23,6 +23,7 @@ DEFAULT_CHAR = "寧寧"
 COMPANION_PROFILE_PATH = os.path.join(HERE, "companion_profile.json")
 APP_PROFILE_STORE_PATH = os.path.join(HERE, "app_profile_store.json")
 BILLING_STORE_PATH = os.path.join(HERE, "billing_store.json")
+PRIVACY_REQUESTS_PATH = os.path.join(HERE, "privacy_requests.json")
 PRIMARY_CARE_RECIPIENT_ID = "local-person-self"
 MAX_JSON_BODY_BYTES = 1_000_000
 MAX_AUDIO_NOTE_BYTES = 12_000_000
@@ -328,6 +329,121 @@ def subscription_event_response(data):
     }
 
 
+def default_privacy_requests_store():
+    return {
+        "schemaVersion": 1,
+        "accountId": "local-demo-account",
+        "requests": [],
+        "retentionPolicy": {
+            "conversationRawTranscriptDefault": "not_retained_as_primary_record",
+            "conversationSummary": "retained_until_user_deletion_or_policy_expiry",
+            "safetyEvents": "retained_for_safety_audit_until_deletion_or_legal_hold",
+            "billingRecords": "retained_as_required_for_tax_refund_and_platform_audit",
+        },
+        "updatedAt": "2026-06-29T00:00:00Z",
+    }
+
+
+def normalize_privacy_request(data=None):
+    data = data or {}
+    req_type = data.get("type") or data.get("requestType") or data.get("request_type") or "export"
+    if req_type not in ("export", "account_deletion"):
+        req_type = "export"
+    return {
+        "id": str(data.get("id") or f"{req_type}_{int(time.time() * 1000)}"),
+        "type": req_type,
+        "status": str(data.get("status") or "requested"),
+        "accountId": str(data.get("accountId") or data.get("account_id") or "local-demo-account"),
+        "requestedAt": data.get("requestedAt") or data.get("requested_at") or utc_now(),
+        "completedAt": data.get("completedAt") or data.get("completed_at"),
+        "reason": str(data.get("reason") or "")[:120],
+        "requiresReauth": bool(data.get("requiresReauth", True)),
+        "subscriptionNoticeRequired": bool(data.get("subscriptionNoticeRequired", req_type == "account_deletion")),
+    }
+
+
+def normalize_privacy_requests_store(data=None):
+    base = default_privacy_requests_store()
+    data = data or {}
+    requests = [normalize_privacy_request(r) for r in data.get("requests", [])]
+    retention = {**base["retentionPolicy"], **(data.get("retentionPolicy") or data.get("retention_policy") or {})}
+    return {
+        "schemaVersion": int(data.get("schemaVersion") or data.get("schema_version") or 1),
+        "accountId": str(data.get("accountId") or data.get("account_id") or base["accountId"]),
+        "requests": requests,
+        "retentionPolicy": retention,
+        "updatedAt": data.get("updatedAt") or data.get("updated_at") or utc_now(),
+    }
+
+
+def load_privacy_requests_store():
+    return normalize_privacy_requests_store(read_json_file(PRIVACY_REQUESTS_PATH, {}))
+
+
+def save_privacy_requests_store(data):
+    store = normalize_privacy_requests_store({**data, "updatedAt": utc_now()})
+    write_json_file(PRIVACY_REQUESTS_PATH, store)
+    return store
+
+
+def append_privacy_request(req_type, data=None):
+    data = data or {}
+    store = load_privacy_requests_store()
+    req = normalize_privacy_request({**data, "type": req_type, "requestedAt": utc_now()})
+    store["requests"].append(req)
+    save_privacy_requests_store(store)
+    return req
+
+
+def privacy_export_response(data):
+    action = (data.get("action") or "preview").lower()
+    if action in ("request", "create"):
+        export_request = append_privacy_request("export", data)
+    else:
+        export_request = normalize_privacy_request({"type": "export", "status": "preview", "requiresReauth": True})
+
+    return {
+        "ok": True,
+        "request": export_request,
+        "exportPackage": {
+            "generatedAt": utc_now(),
+            "account": load_app_profile_store().get("account"),
+            "familyGroup": load_app_profile_store().get("familyGroup"),
+            "primaryCareRecipientId": load_app_profile_store().get("primaryCareRecipientId"),
+            "companionProfiles": load_app_profile_store().get("companionProfiles"),
+            "billing": load_billing_store(),
+            "privacyRequests": load_privacy_requests_store(),
+        },
+        "format": "json",
+        "productionNote": "Production export should run asynchronously, require authentication, and redact provider secrets/internal logs.",
+    }
+
+
+def account_deletion_response(data):
+    action = (data.get("action") or "status").lower()
+    store = load_privacy_requests_store()
+    deletion_requests = [r for r in store["requests"] if r["type"] == "account_deletion"]
+    if action in ("request", "create"):
+        deletion = append_privacy_request("account_deletion", data)
+        deletion_requests.append(deletion)
+    latest = deletion_requests[-1] if deletion_requests else None
+    return {
+        "ok": True,
+        "latestRequest": latest,
+        "status": latest["status"] if latest else "not_requested",
+        "requiresReauth": True,
+        "subscriptionNoticeRequired": True,
+        "productionSteps": [
+            "reauthenticate account owner",
+            "show active subscription cancellation guidance",
+            "queue account deletion",
+            "soft-delete user-scoped data",
+            "retain billing/audit records only as legally required",
+            "confirm completion to user",
+        ],
+    }
+
+
 def _sys_for(char):
     """組這個角色的系統人格：人格 + 醫療界線 +（真人才帶）記憶側寫。"""
     c = eng.CHARS.get(char, eng.CHARS[DEFAULT_CHAR])
@@ -453,7 +569,7 @@ class H(BaseHTTPRequestHandler):
                 "ok": True,
                 "service": "munea-local-engine",
                 "time": utc_now(),
-                "contracts": ["app-profile", "companion-profile", "entitlements", "voice-session"],
+                "contracts": ["app-profile", "companion-profile", "entitlements", "voice-session", "privacy-export", "account-deletion"],
             })
             return
         if path in ("/", ""):
@@ -488,6 +604,10 @@ class H(BaseHTTPRequestHandler):
                 self._json(entitlements_response(data))
             elif self.path == "/subscription-event":
                 self._json(subscription_event_response(data))
+            elif self.path == "/privacy-export":
+                self._json(privacy_export_response(data))
+            elif self.path == "/account-deletion":
+                self._json(account_deletion_response(data))
             else:
                 self._send(404, "text/plain; charset=utf-8", b"404")
         except json.JSONDecodeError as e:

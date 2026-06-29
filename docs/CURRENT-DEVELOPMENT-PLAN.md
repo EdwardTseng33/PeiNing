@@ -47,7 +47,7 @@
 - Added a shared browser-side Companion Profile contract so onboarding, Home, Chat, and Settings use the same `templateId` and `displayName`.
 - Added local backend `/companion-profile` persistence as the bridge from prototype local storage to the future account database.
 - Added `engine/app_profile_store.json` plus `/app-profile` so account, family group, primary person, and companion profiles share one local store before the production database move.
-- Added App Store production readiness baseline: local `/entitlements`, `/subscription-event`, `/healthz`, `engine/billing_store.json`, and `docs/APP-STORE-PRODUCTION-READINESS.md`.
+- Added App Store production readiness baseline: local `/entitlements`, `/subscription-event`, `/privacy-export`, `/account-deletion`, `/healthz`, `engine/billing_store.json`, `engine/privacy_requests.json`, and `docs/APP-STORE-PRODUCTION-READINESS.md`.
 
 ## Tech Stack Verdict
 
@@ -176,7 +176,7 @@ Work items:
 - [x] Add local account/family/person/companion profile store placeholder.
 - [x] Add local subscription entitlement and usage ledger placeholder.
 - [x] Add App Store production readiness checklist and API safety baseline.
-- [ ] Add deletion/export requirements to the backlog.
+- [x] Add deletion/export requirements and local data-rights API contracts.
 
 ## Sprint 1-G: App Store Subscription And Trust Layer
 
@@ -187,6 +187,7 @@ Work items:
 - [x] Add `/subscription-event` placeholder for StoreKit / App Store Server Notifications / RevenueCat webhook flow.
 - [x] Add `/healthz` service contract check.
 - [x] Add request-size, audio MIME, audio-size, and safe API error guardrails.
+- [x] Add `/privacy-export` and `/account-deletion` contracts for App Store account/data rights readiness.
 - [ ] Choose StoreKit 2 direct validation vs RevenueCat for first paid launch.
 - [ ] Configure App Store Connect subscription products and restore-purchase UX.
 - [ ] Implement signed subscription event verification in production backend.
