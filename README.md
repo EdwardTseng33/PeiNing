@@ -156,8 +156,9 @@ For current planning truth, read these first:
 1. `docs/00-總綱-從這裡開始.md`
 2. `docs/SPEC-沐寧-v1-2026-06-28.md`
 3. `docs/CURRENT-DEVELOPMENT-PLAN.md`
-4. `STATUS.md`
-5. `BACKLOG.md`
+4. `docs/MOBILE-VOICE-BRIDGE.md`
+5. `STATUS.md`
+6. `BACKLOG.md`
 
 Some older documents still preserve research history and may contain superseded assumptions, especially around GPT-Realtime, full self-hosting language, old character names, and pre-6/28 screen structure. The SPEC file is the current authority.
 

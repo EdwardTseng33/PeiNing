@@ -34,6 +34,21 @@ for p in ["engine/characters.json", "engine/user_profile.json"]:
 '@ | python -
 Pass "JSON files parse"
 
+Step "Voice note payload decode"
+@'
+import os, sys
+os.environ.setdefault("GEMINI_API_KEY", "smoke-test-key")
+sys.path.insert(0, "engine")
+import server
+payload = {"mime": "audio/webm", "durationMs": 1200, "audio": "dGVzdA=="}
+result = server.decode_voice_note(payload)
+assert result["ok"] is True
+assert result["bytes"] == 4
+assert result["durationMs"] == 1200
+print("voice note bytes", result["bytes"])
+'@ | python -
+Pass "Voice note payload decodes"
+
 Step "Frontend id references"
 @'
 from pathlib import Path
@@ -84,6 +99,13 @@ $fallback = Invoke-RestMethod -Uri "$BaseUrl/open" -Method Post -ContentType "ap
 if (-not $fallback.reply) { throw "/open fallback returned no reply" }
 if ($fallback.err) { throw "/open fallback returned err: $($fallback.err)" }
 Pass "/open unknown role falls back cleanly"
+
+Step "API /voice-note"
+$voiceBody = '{"char":"\u5be7\u5be7","mime":"audio/webm","durationMs":1200,"audio":"dGVzdA=="}'
+$voice = Invoke-RestMethod -Uri "$BaseUrl/voice-note" -Method Post -ContentType "application/json; charset=utf-8" -Body $voiceBody -TimeoutSec 30
+if (-not $voice.ok) { throw "/voice-note returned not ok" }
+if ($voice.bytes -ne 4) { throw "/voice-note decoded unexpected byte length: $($voice.bytes)" }
+Pass "/voice-note accepts captured audio payloads"
 
 Step "API /chat"
 $chatBody = '{"char":"\u5be7\u5be7","history":[{"role":"user","text":"\u6211\u4eca\u5929\u60f3\u804a\u804a\u5065\u5eb7\u548c\u5bb6\u4eba"}]}'

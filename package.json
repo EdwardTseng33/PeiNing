@@ -6,6 +6,7 @@
   "scripts": {
     "smoke": "powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1",
     "smoke:no-api": "powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1 -SkipApi",
+    "cap:doctor": "npx cap doctor",
     "cap:sync": "npx cap sync",
     "cap:add:ios": "npx cap add ios",
     "cap:open:ios": "npx cap open ios"

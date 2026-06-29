@@ -230,9 +230,72 @@ function init() {
       faceSpeak(rr);
     }
   }
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+  async function sendVoiceNote(blob, durationMs) {
+    const cap = $('#chatCaption');
+    if (!blob || !blob.size) {
+      if (cap) cap.textContent = '沒有錄到聲音，我們再試一次。';
+      setFaceState('idle');
+      return;
+    }
+    if (cap) cap.textContent = '收到語音了，我先記下來。';
+    const audio = await blobToDataUrl(blob);
+    const r = await brainPost('/voice-note', { char: currentChar, audio, mime: blob.type || 'audio/webm', durationMs });
+    if (r && r.ok) {
+      if (cap) cap.textContent = r.reply || '語音已送出，下一步會接上即時理解。';
+    } else {
+      if (cap) cap.textContent = '這個裝置可以錄音，但目前先用打字繼續聊。';
+      const s = prompt('我先用文字接住你，想跟寧寧說什麼？');
+      if (s) chatHandle(s);
+    }
+    setFaceState('idle');
+  }
   const chatMic = $('#chatMic');
-  if (chatMic) chatMic.addEventListener('click', () => {
-    if (!SR2) { const s = prompt('（這個瀏覽器先用打字，正式版用即時語音）跟寧寧說什麼？'); if (s) chatHandle(s); return; }
+  let mediaRec = null, mediaChunks = [], mediaStartedAt = 0;
+  async function startVoiceCapture() {
+    const cap = $('#chatCaption');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      const s = prompt('（這個裝置先用打字，正式版用即時語音）跟寧寧說什麼？');
+      if (s) chatHandle(s);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaChunks = [];
+      mediaStartedAt = Date.now();
+      mediaRec = new MediaRecorder(stream);
+      mediaRec.ondataavailable = e => { if (e.data && e.data.size) mediaChunks.push(e.data); };
+      mediaRec.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        chatOn = false;
+        chatMic.classList.remove('recording');
+        const blob = new Blob(mediaChunks, { type: mediaRec.mimeType || 'audio/webm' });
+        await sendVoiceNote(blob, Date.now() - mediaStartedAt);
+      };
+      mediaRec.start();
+      chatOn = true;
+      chatMic.classList.add('recording');
+      setFaceState('listening');
+      if (cap) cap.textContent = '我在錄音，說完再按一次。';
+    } catch (e) {
+      if (cap) cap.textContent = '目前拿不到麥克風權限，先用打字聊。';
+      const s = prompt('想跟寧寧說什麼？');
+      if (s) chatHandle(s);
+    }
+  }
+  if (chatMic) chatMic.addEventListener('click', async () => {
+    if (!SR2) {
+      if (chatOn && mediaRec) { mediaRec.stop(); return; }
+      await startVoiceCapture();
+      return;
+    }
     if (chatOn) { chatRec && chatRec.stop(); return; }
     chatRec = new SR2(); chatRec.lang = 'zh-TW'; chatRec.interimResults = false;
     chatRec.onstart = () => { chatOn = true; chatMic.classList.add('recording'); setFaceState('listening'); if ($('#chatCaption')) $('#chatCaption').textContent = '嗯，我聽著呢…'; };

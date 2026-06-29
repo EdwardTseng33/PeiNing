@@ -1,6 +1,6 @@
 # Munea Current Development Plan
 
-> Updated: 2026-06-28
+> Updated: 2026-06-29
 > Purpose: current execution plan for turning the runnable prototype into a first TestFlight path.
 
 ## Current Truth
@@ -24,6 +24,14 @@
 | Data backend | Local JSON demo only | 10-15% |
 | Real-time avatar | PoC docs exist; not integrated | 15-25% |
 | First TestFlight path | Not ready yet | 30-35% |
+
+## 2026-06-29 Update
+
+- Added the first mobile microphone bridge path.
+- Added `POST /voice-note` as a backend validation endpoint for recorded audio payloads.
+- Updated smoke tests so the audio payload route is checked in full API verification.
+- Added `docs/MOBILE-VOICE-BRIDGE.md` for iOS handoff and next device test steps.
+- Ran local `npm install`, full smoke test, and Capacitor Doctor.
 
 ## Sprint 1-B: Handoff Baseline
 
@@ -50,7 +58,8 @@ Definition of done:
 Goal: prepare the iOS app wrapper.
 
 Work items:
-- [ ] Run `npm install`.
+- [x] Run `npm install`.
+- [x] Verify Capacitor CLI and iOS package with `npx cap doctor`.
 - [ ] On macOS with Xcode: run `npm run cap:add:ios`.
 - [ ] Verify app opens the bundled `web/` shell.
 - [ ] Add iOS usage descriptions for microphone and future HealthKit.
@@ -69,6 +78,8 @@ Work items:
 - [ ] Request iOS microphone permission.
 - [ ] Capture microphone audio in WKWebView / Capacitor.
 - [ ] Confirm audio can be passed to the voice layer.
+- [x] Add backend `/voice-note` bridge endpoint for captured audio payloads.
+- [x] Add smoke-test coverage for the voice payload route.
 - [ ] Measure start latency and permission friction.
 
 Go/no-go:

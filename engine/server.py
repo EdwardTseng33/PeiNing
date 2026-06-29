@@ -66,6 +66,20 @@ def tts_b64(text, char=DEFAULT_CHAR):
     return ""
 
 
+def decode_voice_note(data):
+    raw = data.get("audio") or ""
+    if "," in raw:
+        raw = raw.split(",", 1)[1]
+    audio_bytes = base64.b64decode(raw) if raw else b""
+    return {
+        "ok": bool(audio_bytes),
+        "bytes": len(audio_bytes),
+        "mime": data.get("mime") or "audio/webm",
+        "durationMs": data.get("durationMs") or 0,
+        "reply": "我收到你的語音了。下一步會把這段接到即時語音理解。",
+    }
+
+
 EXT = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
        ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8",
        ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
@@ -109,6 +123,8 @@ class H(BaseHTTPRequestHandler):
             elif self.path == "/chat":
                 t = reply_conv(data.get("history", []), char)
                 self._json({"reply": t, "audio": tts_b64(t, char)})
+            elif self.path == "/voice-note":
+                self._json(decode_voice_note(data))
             else:
                 self._send(404, "text/plain; charset=utf-8", b"404")
         except Exception as e:
