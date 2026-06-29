@@ -42,6 +42,7 @@
 - Added `docs/TECH-STACK-EVALUATION-2026-06-29.md` to review the full product stack and confirm the best path.
 - Added `docs/VOICE-PROVIDER-ADAPTER.md` and the first `window.MuneaVoiceProvider` / `/voice-session` contract.
 - Split companion identity into user-chosen display name plus selectable character template, and redesigned Settings around product domains instead of duplicated role rows.
+- Reduced Home visual density, redesigned the chat entry module, and split thumbnail avatar assets from fullscreen chat avatar assets.
 
 ## Tech Stack Verdict
 

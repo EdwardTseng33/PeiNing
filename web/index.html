@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="src/styles.css" />
+  <link rel="stylesheet" href="src/styles.css?v=20260629-uiux-avatar" />
 </head>
 <body>
 <div class="app-shell">
@@ -23,7 +23,7 @@
           <span class="logo-mark" aria-hidden="true"><img src="icons/munea-logo.png" alt=""></span>
           <span class="logo-word">Mu<b>nea</b><span class="logo-zh">沐寧</span></span>
         </span>
-        <span class="home-meta">6/26 星期四 · 晴 26°</span>
+        <span class="home-meta"><span>6/26 週四</span><b>晴 26°</b></span>
       </div>
 
       <div class="greeting-wrap">
@@ -38,12 +38,13 @@
       </div>
 
       <div class="butler-card">
-        <span class="bc-chip"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M6 6 4.5 4.5M19.5 19.5 18 18M6 18l-1.5 1.5M19.5 4.5 18 6"/></svg>適合散步</span>
         <div class="bc-row">
           <div class="bc-avatar"><img class="ava-img" src="avatars/nening-real-female.png" alt="寧寧"><span class="online"></span></div>
           <div class="bc-info">
-            <div class="bc-name"><span id="companionHomeName">寧寧</span><span class="bc-tag">AI 健康陪伴</span></div>
+            <div class="bc-eyebrow">AI 陪伴入口</div>
+            <div class="bc-name"><span id="companionHomeName">寧寧</span></div>
             <span class="bc-status"><span class="dot"></span>今天想先聊聊嗎？</span>
+            <span class="bc-chip"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M6 6 4.5 4.5M19.5 19.5 18 18M6 18l-1.5 1.5M19.5 4.5 18 6"/></svg>適合散步</span>
           </div>
         </div>
         <button class="video-btn" id="startCall"><svg class="ic" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>開始聊聊</button>
@@ -313,7 +314,7 @@
   <section class="screen face-screen" id="chat" data-state="idle">
     <!-- 全屏臉（佔畫面主體、置中偏上、像跟家人視訊）。會動時對嘴；現為靜態圖＋CSS 呼吸眨眼佔位（§6.5 降級層 1-2） -->
     <div class="face-bg">
-      <img id="faceImg" src="avatars/nening-real-female.png" alt="寧寧">
+      <img id="faceImg" src="avatars/nening-real-female-full.png" alt="寧寧">
       <div class="face-blink"></div>
       <div class="avatar-mouth" id="avatarMouth" aria-hidden="true"><span></span></div>
     </div>
@@ -411,6 +412,6 @@
   </nav>
 
 </div>
-  <script type="module" src="src/app.js"></script>
+  <script type="module" src="src/app.js?v=20260629-uiux-avatar"></script>
 </body>
 </html>
