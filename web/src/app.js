@@ -108,16 +108,28 @@ const avatarRuntime = {
     clearTimeout(speakTimer);
     const ms = audioMs || Math.min(8000, Math.max(2200, (text ? text.length : 8) * 165));
     this.startMockViseme(ms);
-    speakTimer = setTimeout(() => { if (this.state === 'speaking') this.setState('idle'); }, ms);
+    speakTimer = setTimeout(() => {
+      if (this.state === 'speaking') {
+        this.setState('idle');
+        setCallHint('直接說，我在這裡');
+      }
+    }, ms);
   },
   onAudioEnd() {
-    if (this.state === 'speaking') this.setState('idle');
+    if (this.state === 'speaking') {
+      this.setState('idle');
+      setCallHint('直接說，我在這裡');
+    }
   },
 };
 window.MuneaAvatarRuntime = avatarRuntime;
 
 function setFaceState(st) { avatarRuntime.setState(st); }
 function faceSpeak(text, audioMs = 0) { avatarRuntime.speak(text, audioMs); }
+function setCallHint(text) {
+  const cap = $('#chatCaption');
+  if (cap) cap.textContent = text;
+}
 function templateFor(avatarId = currentAvatarId) {
   return CHARACTER_TEMPLATES[avatarId] || CHARACTER_TEMPLATES['nening-real-female'];
 }
@@ -155,7 +167,7 @@ function setCompanionTemplate(avatarId) {
   voiceProvider.close();
   syncCompanionUI();
   const cap = $('#chatCaption');
-  if (cap) cap.textContent = `${companionDisplayName}在這裡，想聊什麼都可以。`;
+  if (cap) cap.textContent = '直接說，我在這裡';
 }
 
 function playB64(b64) {
@@ -241,17 +253,17 @@ async function enterChat() {
   if (chatOpened) return;
   chatOpened = true;
   setFaceState('idle');
-  const cap = $('#chatCaption');
-  if (cap) cap.textContent = '我在這裡，今天過得好嗎？';   // 先暖暖招呼、不留空白，等個人化開場回來再換
+  setCallHint('正在連線...');
   const r = await voiceProvider.open(currentChar);
   if (r && r.reply) {
-    if (cap) cap.textContent = r.reply;
+    setCallHint('正在說話');
     chatHistory.push({ role: 'model', text: r.reply });
     if (r.audio) playB64(r.audio); else say(r.reply);
     faceSpeak(r.reply);
-  } else if (cap) {
-    cap.textContent = '我在這裡，今天過得好嗎？想聊什麼都可以。';   // 沒真腦時的暖場
-    faceSpeak(cap.textContent);
+  } else {
+    const fallback = '我在這裡，今天過得好嗎？想聊什麼都可以。';
+    setCallHint('直接說，我在這裡');
+    faceSpeak(fallback);
   }
 }
 
@@ -400,20 +412,19 @@ function init() {
   ];
   function chatReply(t) { for (const [re, r] of CHAT_RULES) if (re.test(t.toLowerCase())) return r; return '我聽見了，你慢慢說，我都在。'; }
   async function chatHandle(t) {
-    const cap = $('#chatCaption');
-    if (cap) cap.textContent = `你說：「${t}」`;
+    setCallHint('我聽見了');
     chatHistory.push({ role: 'user', text: t });
-    // [§6.2] 思考態：不空等轉圈，臉有「她在想」的活著感（< 1.5s 內回）
-    setTimeout(() => { setFaceState('thinking'); if (cap && cap.textContent.startsWith('你說')) cap.textContent = '嗯…我想想'; }, 380);
+    // [S2S] 思考態：不顯示文字稿，只讓臉與狀態提示表達「她在想」
+    setTimeout(() => { setFaceState('thinking'); setCallHint('我想一下'); }, 380);
     const r = await voiceProvider.sendText({ history: chatHistory, char: currentChar });
     if (r && r.reply) {                              // 真腦回話＋真聲音
-      if (cap) cap.textContent = r.reply;
+      setCallHint('正在說話');
       chatHistory.push({ role: 'model', text: r.reply });
       if (r.audio) playB64(r.audio); else say(r.reply);
       faceSpeak(r.reply);
     } else {                                          // 沒真腦 → 退回規則版（純靜態 demo 也能動）
       const rr = chatReply(t);
-      if (cap) cap.textContent = rr;
+      setCallHint('正在說話');
       chatHistory.push({ role: 'model', text: rr });
       say(rr);
       faceSpeak(rr);
@@ -428,19 +439,18 @@ function init() {
     });
   }
   async function sendVoiceNote(blob, durationMs) {
-    const cap = $('#chatCaption');
     if (!blob || !blob.size) {
-      if (cap) cap.textContent = '沒有錄到聲音，我們再試一次。';
+      setCallHint('沒有聽清楚，再說一次');
       setFaceState('idle');
       return;
     }
-    if (cap) cap.textContent = '收到語音了，我先記下來。';
+    setCallHint('我想一下');
     const audio = await blobToDataUrl(blob);
     const r = await voiceProvider.sendVoiceNote({ char: currentChar, audio, mime: blob.type || 'audio/webm', durationMs });
     if (r && r.ok) {
-      if (cap) cap.textContent = r.reply || '語音已送出，下一步會接上即時理解。';
+      setCallHint('正在說話');
     } else {
-      if (cap) cap.textContent = '這個裝置可以錄音，但目前先用打字繼續聊。';
+      setCallHint('目前無法語音連線');
       const s = prompt(`我先用文字接住你，想跟${companionDisplayName}說什麼？`);
       if (s) chatHandle(s);
     }
@@ -449,7 +459,6 @@ function init() {
   const chatMic = $('#chatMic');
   let mediaRec = null, mediaChunks = [], mediaStartedAt = 0;
   async function startVoiceCapture() {
-    const cap = $('#chatCaption');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
       const s = prompt(`（這個裝置先用打字，正式版用即時語音）跟${companionDisplayName}說什麼？`);
       if (s) chatHandle(s);
@@ -472,9 +481,9 @@ function init() {
       chatOn = true;
       chatMic.classList.add('recording');
       setFaceState('listening');
-      if (cap) cap.textContent = '我在錄音，說完再按一次。';
+      setCallHint('我在聽，說完再按一次');
     } catch (e) {
-      if (cap) cap.textContent = '目前拿不到麥克風權限，先用打字聊。';
+      setCallHint('目前拿不到麥克風權限');
       const s = prompt(`想跟${companionDisplayName}說什麼？`);
       if (s) chatHandle(s);
     }
@@ -487,7 +496,7 @@ function init() {
     }
     if (chatOn) { chatRec && chatRec.stop(); return; }
     chatRec = new SR2(); chatRec.lang = 'zh-TW'; chatRec.interimResults = false;
-    chatRec.onstart = () => { chatOn = true; chatMic.classList.add('recording'); setFaceState('listening'); if ($('#chatCaption')) $('#chatCaption').textContent = '嗯，我聽著呢…'; };
+    chatRec.onstart = () => { chatOn = true; chatMic.classList.add('recording'); setFaceState('listening'); setCallHint('我在聽'); };
     chatRec.onresult = e => chatHandle(e.results[0][0].transcript);
     chatRec.onend = () => { chatOn = false; chatMic.classList.remove('recording'); if ($('#chat') && $('#chat').dataset.state === 'listening') setFaceState('idle'); };
     chatRec.onerror = chatRec.onend;

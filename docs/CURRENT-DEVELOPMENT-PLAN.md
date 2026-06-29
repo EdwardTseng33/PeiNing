@@ -43,6 +43,7 @@
 - Added `docs/VOICE-PROVIDER-ADAPTER.md` and the first `window.MuneaVoiceProvider` / `/voice-session` contract.
 - Split companion identity into user-chosen display name plus selectable character template, and redesigned Settings around product domains instead of duplicated role rows.
 - Reduced Home visual density, redesigned the chat entry module, and split thumbnail avatar assets from fullscreen chat avatar assets.
+- Reframed Chat as S2S call-first: visible text is state feedback only; transcript/captions are future accessibility options, not the default product surface.
 
 ## Tech Stack Verdict
 
@@ -165,7 +166,7 @@ Work items:
 - [ ] Choose backend database stack.
 - [ ] Implement Profile and Memory tables first.
 - [ ] Define `family_group_id` and permission model.
-- [ ] Add transcript retention policy.
+- [ ] Add conversation memory and retention policy without making raw transcripts the default user-facing surface.
 - [ ] Add deletion/export requirements to the backlog.
 
 ## Immediate Priority Order

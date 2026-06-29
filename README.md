@@ -14,7 +14,7 @@ Munea is positioned as **smart care and companionship, not medical software**. I
 
 - **Core user:** people who want daily AI health-care companionship, plus the family members who care about them.
 - **First platform:** iOS first, Android later.
-- **First experience:** open the app and use `聊聊`: a fullscreen butler face with voice, subtitles, memory, and gentle proactive care.
+- **First experience:** open the app and use `聊聊`: a fullscreen butler face with speech-to-speech voice, memory, and gentle proactive care.
 - **MVP scope:** Taiwan Mandarin voice companionship, health-routine reminders, family interaction, emotional safety referral, onboarding, and a family dashboard.
 - **Language priority:** Taiwan Mandarin first, English second. Taiwanese Hokkien is research-only for now because there is no mature enough real-time product path, and Munea will not self-train a language model.
 - **Future moat:** a warmer Taiwan Mandarin / English voice experience, richer avatar engines, deeper memory, health-data integrations, and hardware-assisted care services.
@@ -90,6 +90,8 @@ Secrets are expected in `engine/.env.local`, which is ignored by Git.
 Critical principle: **conversation continuity beats face fidelity**. If avatar rendering is slow or unavailable, the app should keep the voice conversation alive and degrade the face gracefully.
 
 Companion identity is intentionally split: `display_name` is what the user calls the companion, while `template_id`, `avatar_asset`, and `voice_profile` define how that companion looks, sounds, and behaves. This prevents Settings from becoming a repeated "choose a character" flow and keeps future family profiles flexible.
+
+Chat is designed as speech-to-speech by default. The main experience should feel like a video call, not a transcript reader; visible text is limited to call state, safety prompts, and future optional accessibility captions.
 
 ---
 

@@ -18,7 +18,7 @@ Family and older-adult care remain the first high-value market wedge, but Munea 
 | Layer | Purpose | Current State |
 |---|---|---|
 | Home | Daily greeting, reminders, quick entry into `聊聊` | Runnable prototype |
-| 聊聊 | Fullscreen face, voice, subtitles, emotional companionship | Local Gemini chat/TTS demo + microphone bridge |
+| 聊聊 | Fullscreen face, speech-to-speech voice, emotional companionship | Local Gemini chat/TTS demo + microphone bridge |
 | Health Status | Health routines, Apple Health entry, trend summaries | Prototype UI |
 | Family | Family view, encouragement, shared care loop | Prototype UI |
 | Settings / Onboarding | Profile, avatar choice, family setup, device setup | Prototype UI |
@@ -32,7 +32,7 @@ Munea is organized as four core layers:
 ```mermaid
 flowchart TD
   App["iOS App Shell<br/>Capacitor + Web Core"]
-  Conversation["Conversation Layer<br/>listen, respond, voice, subtitles"]
+  Conversation["Conversation Layer<br/>listen, respond, voice, call state"]
   Brains["AI Brains<br/>reflex, butler, guardian"]
   Data["Data Layer<br/>profile, memory, family, health, ledger"]
   Avatar["Avatar Runtime<br/>static fallback, 2D viseme, Ditto, LiveAvatar"]
@@ -58,6 +58,7 @@ Hot path for `聊聊`.
 - Current prototype uses Gemini generation + TTS.
 - Target direction is a real-time voice loop behind a `MuneaVoiceProvider` adapter, with Gemini Live / Interactions as the first candidate rather than a hard-coded dependency.
 - Current app contract exposes `window.MuneaVoiceProvider`; backend exposes `/voice-session` for capability metadata and future ephemeral real-time sessions.
+- The product default is speech-to-speech: the call screen should feel like a video conversation. Do not surface a running transcript as the primary UI. Captions may exist later as an accessibility option, not as the default interaction model.
 
 ### Butler Brain
 
