@@ -32,6 +32,9 @@ let chatHistory = [];            // 多輪對話脈絡
 let chatOpened = false;          // 這次進聊聊她有沒有先開過口
 let chatAudio = null;
 let companionBackendSyncing = false;
+let activeChatSessionId = null;
+let activeChatStartedAt = 0;
+let activeChatTurnCount = 0;
 
 /* ===== AvatarRuntime：先把即時 avatar 的共用合約立起來 =====
  * mode=static-css 先用靜態圖 + CSS 呼吸/眨眼/聲波；之後 Ditto / LiveAvatar 只要接這層。 */
@@ -258,6 +261,33 @@ async function brainPost(url, body) {
 }
 
 /* ===== VoiceProvider：先立合約，之後可換 Gemini Live / Interactions，不綁死 App 核心 ===== */
+function makeSessionId(prefix = 'session') {
+  return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+}
+function analyticsContext(extra = {}) {
+  return {
+    templateId: currentAvatarId,
+    avatarMode: avatarRuntime.mode,
+    voiceProvider: voiceProvider.mode,
+    voiceState: voiceProvider.state,
+    companionTemplate: currentAvatarId,
+    ...extra,
+  };
+}
+function trackProductEvent(eventName, properties = {}) {
+  if (!eventName || isStaticPreview()) return Promise.resolve(null);
+  const safeProperties = analyticsContext(properties);
+  delete safeProperties.text;
+  delete safeProperties.transcript;
+  delete safeProperties.reply;
+  return brainPost('/product-event', {
+    eventName,
+    sessionId: activeChatSessionId,
+    source: 'web-prototype',
+    properties: safeProperties,
+  });
+}
+
 function isAvatarDebug() {
   return new URLSearchParams(location.search).get('debug') === 'avatar';
 }
@@ -321,7 +351,13 @@ async function avatarSessionApi(action = 'start', extra = {}) {
 async function prepareAvatarSession(extra = {}) {
   avatarRuntime.setMode(requestedAvatarMode());
   const response = await avatarSessionApi('start', extra);
-  applyAvatarSessionDecision(response);
+  const session = applyAvatarSessionDecision(response);
+  trackProductEvent('avatar_session_started', {
+    requestedMode: requestedAvatarMode(),
+    selectedMode: session ? session.selectedMode : avatarRuntime.mode,
+    provider: session ? session.provider : 'local-browser',
+    fallbackReason: session ? session.fallbackReason : '',
+  });
   return response;
 }
 async function recordAvatarUsage(text, audioMs = 0) {
@@ -333,7 +369,12 @@ async function recordAvatarUsage(text, audioMs = 0) {
     durationMs,
     estimatedDurationMs: durationMs,
   });
-  applyAvatarSessionDecision(response);
+  const session = applyAvatarSessionDecision(response);
+  trackProductEvent('avatar_session_completed', {
+    durationMs,
+    selectedMode: session ? session.selectedMode : avatarRuntime.mode,
+    usageCommitted: !!(session && session.usageCommitted),
+  });
 }
 
 const voiceProvider = {
@@ -394,9 +435,16 @@ window.MuneaVoiceProvider = voiceProvider;
 async function enterChat() {
   if (chatOpened) return;
   chatOpened = true;
+  activeChatSessionId = makeSessionId('voice');
+  activeChatStartedAt = Date.now();
+  activeChatTurnCount = 0;
   setFaceState('idle');
   setCallHint('正在連線...');
   await prepareAvatarSession();
+  trackProductEvent('voice_session_started', {
+    locale: 'zh-TW',
+    requestedAvatarMode: requestedAvatarMode(),
+  });
   const r = await voiceProvider.open(currentChar);
   if (r && r.reply) {
     setCallHint('正在說話');
@@ -408,6 +456,20 @@ async function enterChat() {
     setCallHint('直接說，我在這裡');
     faceSpeak(fallback);
   }
+}
+
+function completeChatSession(reason = 'ended') {
+  if (!activeChatSessionId || !activeChatStartedAt) return;
+  const durationMs = Math.max(0, Date.now() - activeChatStartedAt);
+  trackProductEvent('voice_session_completed', {
+    reason,
+    durationMs,
+    turnCount: activeChatTurnCount,
+    meaningful: durationMs >= 60000 || activeChatTurnCount >= 3,
+  });
+  activeChatSessionId = null;
+  activeChatStartedAt = 0;
+  activeChatTurnCount = 0;
 }
 
 function showView(id) {
@@ -451,7 +513,11 @@ function init() {
   // 首頁「跟寧寧聊聊」＝ 進同一個全屏臉（不再有獨立視訊頁）
   if ($('#startCall')) $('#startCall').addEventListener('click', () => showView('chat'));
   // 用藥服務窗（獨立功能、保留）
-  if ($('#medTaken')) $('#medTaken').addEventListener('click', () => { say('好，記下來了，連續六天，你真棒。'); showView('home'); });
+  if ($('#medTaken')) $('#medTaken').addEventListener('click', () => {
+    trackProductEvent('routine_reminder_completed', { reminderType: 'medication' });
+    say('好，記下來了，連續六天，你真棒。');
+    showView('home');
+  });
   if ($('#medSnooze')) $('#medSnooze').addEventListener('click', () => showView('home'));
 
   // 連接裝置（狀態頁資料條 / 設定裝置區 → 串接三方裝置引導）
@@ -558,6 +624,7 @@ function init() {
   async function chatHandle(t) {
     setCallHint('我聽見了');
     chatHistory.push({ role: 'user', text: t });
+    activeChatTurnCount += 1;
     // [S2S] 思考態：不顯示文字稿，只讓臉與狀態提示表達「她在想」
     setTimeout(() => { setFaceState('thinking'); setCallHint('我想一下'); }, 380);
     const r = await voiceProvider.sendText({ history: chatHistory, char: currentChar });
@@ -566,12 +633,21 @@ function init() {
       chatHistory.push({ role: 'model', text: r.reply });
       if (r.audio) playB64(r.audio); else say(r.reply);
       faceSpeak(r.reply);
+      trackProductEvent('voice_turn_completed', {
+        turnCount: activeChatTurnCount,
+        replyAudio: !!r.audio,
+        fallbackUsed: false,
+      });
     } else {                                          // 沒真腦 → 退回規則版（純靜態 demo 也能動）
       const rr = chatReply(t);
       setCallHint('正在說話');
       chatHistory.push({ role: 'model', text: rr });
       say(rr);
       faceSpeak(rr);
+      trackProductEvent('voice_session_fallback_used', {
+        turnCount: activeChatTurnCount,
+        fallback: 'local-rule-reply',
+      });
     }
   }
   function blobToDataUrl(blob) {
@@ -592,8 +668,17 @@ function init() {
     const audio = await blobToDataUrl(blob);
     const r = await voiceProvider.sendVoiceNote({ char: currentChar, audio, mime: blob.type || 'audio/webm', durationMs });
     if (r && r.ok) {
+      trackProductEvent('voice_note_uploaded', {
+        durationMs,
+        bytes: r.bytes || 0,
+        mime: blob.type || 'audio/webm',
+      });
       setCallHint('正在說話');
     } else {
+      trackProductEvent('voice_session_fallback_used', {
+        fallback: 'voice-note-upload-failed',
+        durationMs,
+      });
       setCallHint('目前無法語音連線');
       const s = prompt(`我先用文字接住你，想跟${companionDisplayName}說什麼？`);
       if (s) chatHandle(s);
@@ -646,7 +731,7 @@ function init() {
     chatRec.onerror = chatRec.onend;
     chatRec.start();
   });
-  if ($('#chatEnd')) $('#chatEnd').addEventListener('click', () => { chatOpened = false; showView('home'); });
+  if ($('#chatEnd')) $('#chatEnd').addEventListener('click', () => { completeChatSession('user_ended'); chatOpened = false; showView('home'); });
 
   // 陪伴角色：使用者命名與模板分離
   const companionNameInput = $('#companionNameInput');

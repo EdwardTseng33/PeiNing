@@ -17,6 +17,7 @@ Current state:
 - Backend startup can load private values from `engine/.env.local`, and `npm run supabase:doctor` validates Supabase wiring without printing backend secrets.
 - `/avatar-session` now provides the backend contract for selecting Avatar runtime mode, falling back to `2d-viseme`, and recording premium Avatar minute usage.
 - `/product-event` now records product analytics events, and `/admin/north-star` provides the first token-gated North Star summary contract.
+- The web prototype now emits safe product events for Chat start/completion, voice turns, voice-note upload, Avatar session start/completion, and routine completion. It does not send raw transcript text to analytics.
 - Production API contracts are partially represented in `engine/server.py`.
 - Admin and analytics are not built yet, but their data model must be planned now.
 
@@ -233,7 +234,7 @@ Definition:
 
 A meaningful companion day is true when at least one of the following occurs:
 
-- voice/S2S companion session reaches minimum duration or successful turn count.
+- voice/S2S companion session reaches minimum duration or successful turn count. Current prototype threshold: `durationMs >= 60000` or `turnCount >= 3`.
 - routine/reminder is acknowledged or completed.
 - family interaction is sent, viewed, or replied.
 - AI companion creates a useful care summary without triggering unsafe behavior.

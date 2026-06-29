@@ -577,10 +577,18 @@ required = [
     "sendText({ history, char })",
     "sendVoiceNote({ audio, mime, durationMs, char })",
     "/voice-session",
+    "trackProductEvent",
+    "/product-event",
+    "voice_session_started",
+    "voice_session_completed",
+    "voice_turn_completed",
 ]
 missing = [item for item in required if item not in js]
 if missing:
     raise SystemExit("Missing voice provider contract pieces: " + ", ".join(missing))
+for forbidden in ["safeProperties.text", "safeProperties.transcript", "safeProperties.reply"]:
+    if forbidden not in js:
+        raise SystemExit("Product analytics must explicitly strip: " + forbidden)
 print("voice provider contract OK")
 '@ | python -
 Pass "Voice provider contract is present"

@@ -36,7 +36,6 @@ ALLOWED_AUDIO_MIMES = {"audio/webm", "audio/mp4", "audio/mpeg", "audio/wav", "au
 AVATAR_ENGINE_MODES = {"static-css", "2d-viseme", "ditto", "liveavatar"}
 PREMIUM_AVATAR_MODES = {"ditto", "liveavatar"}
 MEANINGFUL_EVENT_NAMES = {
-    "voice_session_completed",
     "routine_reminder_completed",
     "family_interaction_sent",
     "family_message_sent",
