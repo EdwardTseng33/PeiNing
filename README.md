@@ -182,8 +182,9 @@ For current planning truth, read these first:
 11. `docs/APP-STORE-PRODUCTION-READINESS.md`
 12. `docs/BACKEND-ARCHITECTURE-v1.md`
 13. `docs/supabase/SETUP.md`
-14. `STATUS.md`
-15. `BACKLOG.md`
+14. `docs/CODEX-SKILLS-SETUP.md`
+15. `STATUS.md`
+16. `BACKLOG.md`
 
 Some older documents still preserve research history and may contain superseded assumptions, especially around GPT-Realtime, full self-hosting language, old character names, and pre-6/28 screen structure. The SPEC file is the current authority.
 
@@ -194,6 +195,7 @@ Some older documents still preserve research history and may contain superseded 
 - Windows/local prototype: use `run-munea-app.bat`.
 - iOS packaging: requires macOS, Xcode, Apple Developer access, and Capacitor.
 - Repeatable baseline check: `npm run smoke` when the local engine is running, or `npm run smoke:no-api` for static checks only.
+- Codex operating skills for CTO/Munea development are repo-backed under `codex-skills/`. To continue on another Windows computer, run `powershell -ExecutionPolicy Bypass -File .\scripts\install-codex-skills.ps1` and restart Codex.
 - The local development folder may still contain historical `PeiNing/peining` path names; GitHub and product naming are now **Munea / 沐寧**.
 - Do not commit `engine/.env.local`.
 

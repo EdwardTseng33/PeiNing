@@ -261,6 +261,42 @@ print("backend architecture sections", len(required))
 '@ | python -
 Pass "Backend architecture document covers required sections"
 
+Step "Repo-backed Codex skill contract"
+@'
+from pathlib import Path
+
+required = {
+    "cto-context-architect": [
+        "name: cto-context-architect",
+        "description:",
+        "Production Architecture Rules",
+        "Munea Overlay",
+    ],
+    "munea-cto": [
+        "name: munea-cto",
+        "description:",
+        "Backend Rules",
+        "Voice And Avatar Rules",
+    ],
+}
+
+for skill, tokens in required.items():
+    path = Path("codex-skills") / skill / "SKILL.md"
+    if not path.exists():
+        raise SystemExit(f"Missing Codex skill: {path}")
+    text = path.read_text(encoding="utf-8")
+    missing = [token for token in tokens if token not in text]
+    if missing:
+        raise SystemExit(f"{skill} missing tokens: {', '.join(missing)}")
+
+setup_doc = Path("docs/CODEX-SKILLS-SETUP.md").read_text(encoding="utf-8")
+if "Claude collaboration is unaffected" not in setup_doc:
+    raise SystemExit("Codex skill setup doc must state Claude collaboration boundary")
+
+print("codex skills", len(required))
+'@ | python -
+Pass "Repo-backed Codex skills are present and documented"
+
 Step "Privacy data-rights contract"
 @'
 import os, sys
