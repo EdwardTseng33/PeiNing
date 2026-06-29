@@ -121,11 +121,13 @@ Rules:
 
 Current prototype contract:
 
-- `web/src/companion-profile.js` is the single browser-side Companion Profile source of truth.
+- `web/src/companion-profile.js` is the browser-side Companion Profile adapter and static-preview fallback.
+- `engine/companion_profile.json` is the local backend persistence placeholder.
+- `POST /companion-profile` loads or saves the same `templateId` / `displayName` shape.
 - Onboarding writes `templateId` and `displayName` before entering the app.
 - Home, Chat, and Settings all read the same profile.
 - Settings writes back to the same profile when the user renames the companion or changes templates.
-- Prototype persistence uses `localStorage`; production should move the same shape into the account/family database.
+- Static preview persistence uses `localStorage`; full app mode syncs to the local backend. Production should move the same shape into the account/family database.
 
 ## iOS Shell
 

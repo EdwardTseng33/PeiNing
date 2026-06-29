@@ -6,6 +6,7 @@
   POST /open  {char}         → 該角色「主動先開口」＋語音
   POST /chat  {history,char} → 該角色帶記憶回話＋語音
   POST /voice-session        → 回傳目前語音 provider 能力；之後接即時語音 session
+  POST /companion-profile    → 讀寫陪伴角色 templateId/displayName
 用法：GEMINI_API_KEY="..." py server.py  → 瀏覽器開 http://localhost:8200
 """
 import os, sys, json, base64, io, wave, time, posixpath
@@ -19,6 +20,66 @@ if not os.environ.get("GEMINI_API_KEY"):
 HERE = os.path.dirname(os.path.abspath(__file__))
 WEB_DIR = os.path.normpath(os.path.join(HERE, "..", "web"))
 DEFAULT_CHAR = "寧寧"
+COMPANION_PROFILE_PATH = os.path.join(HERE, "companion_profile.json")
+COMPANION_TEMPLATES = {
+    "nening-real-female": {"defaultName": "寧寧", "backendChar": "寧寧"},
+    "companion-real-male": {"defaultName": "阿宏", "backendChar": "阿宏"},
+    "munea-2d-xiaoyun": {"defaultName": "小昀", "backendChar": "小昀"},
+    "munea-2d-ayuan": {"defaultName": "阿原", "backendChar": "阿原"},
+    "munea-2d-mimi": {"defaultName": "咪咪", "backendChar": "咪咪"},
+    "munea-2d-wangcai": {"defaultName": "旺財", "backendChar": "旺財"},
+}
+COMPANION_ALIASES = {
+    "real-f": "nening-real-female",
+    "real-m": "companion-real-male",
+    "toon-f": "munea-2d-xiaoyun",
+    "toon-m": "munea-2d-ayuan",
+    "cat": "munea-2d-mimi",
+    "dog": "munea-2d-wangcai",
+}
+
+
+def normalize_template_id(template_id):
+    template_id = COMPANION_ALIASES.get(template_id, template_id)
+    return template_id if template_id in COMPANION_TEMPLATES else "nening-real-female"
+
+
+def normalize_companion_profile(data=None):
+    data = data or {}
+    template_id = normalize_template_id(data.get("templateId") or data.get("template_id"))
+    default_name = COMPANION_TEMPLATES[template_id]["defaultName"]
+    display_name = (data.get("displayName") or data.get("display_name") or default_name).strip()[:12] or default_name
+    return {
+        "templateId": template_id,
+        "displayName": display_name,
+        "nameTouched": bool(data.get("nameTouched") or data.get("name_touched")),
+        "updatedAt": data.get("updatedAt") or data.get("updated_at") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
+def load_companion_profile():
+    try:
+        with open(COMPANION_PROFILE_PATH, encoding="utf-8") as f:
+            return normalize_companion_profile(json.load(f))
+    except Exception:
+        return normalize_companion_profile()
+
+
+def save_companion_profile(data):
+    profile = normalize_companion_profile({**data, "updatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+    with open(COMPANION_PROFILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(profile, f, ensure_ascii=False, indent=2)
+    return profile
+
+
+def companion_profile_response(data):
+    action = (data.get("action") or "load").lower()
+    if action == "save":
+        profile = save_companion_profile(data.get("profile") or data)
+    else:
+        profile = load_companion_profile()
+    template = COMPANION_TEMPLATES[profile["templateId"]]
+    return {"ok": True, "profile": profile, "backendChar": template["backendChar"]}
 
 
 def _sys_for(char):
@@ -147,6 +208,8 @@ class H(BaseHTTPRequestHandler):
                 self._json(voice_session(data))
             elif self.path == "/voice-note":
                 self._json(decode_voice_note(data))
+            elif self.path == "/companion-profile":
+                self._json(companion_profile_response(data))
             else:
                 self._send(404, "text/plain; charset=utf-8", b"404")
         except Exception as e:

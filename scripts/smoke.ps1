@@ -28,7 +28,7 @@ Pass "Python files compile"
 Step "JSON parse"
 @'
 import json, pathlib
-for p in ["engine/characters.json", "engine/user_profile.json"]:
+for p in ["engine/characters.json", "engine/user_profile.json", "engine/companion_profile.json"]:
     json.loads(pathlib.Path(p).read_text(encoding="utf-8"))
     print(f"{p} OK")
 '@ | python -
@@ -49,8 +49,32 @@ print("voice note bytes", result["bytes"])
 '@ | python -
 Pass "Voice note payload decodes"
 
+Step "Companion profile contract"
+@'
+import os, sys
+os.environ.setdefault("GEMINI_API_KEY", "smoke-test-key")
+sys.path.insert(0, "engine")
+import server
+
+profile = server.normalize_companion_profile({
+    "templateId": "cat",
+    "displayName": " 小花 ",
+    "nameTouched": True,
+})
+assert profile["templateId"] == "munea-2d-mimi"
+assert profile["displayName"] == "小花"
+assert profile["nameTouched"] is True
+
+resp = server.companion_profile_response({"action": "load"})
+assert resp["ok"] is True
+assert "templateId" in resp["profile"]
+print("companion profile", profile["templateId"], profile["displayName"])
+'@ | python -
+Pass "Companion profile normalizes aliases and load response"
+
 Step "Frontend JavaScript syntax"
 node --check web\src\app.js
+node --check web\src\companion-profile.js
 Pass "Frontend JavaScript parses"
 
 Step "Avatar runtime contract"
@@ -154,6 +178,12 @@ if (-not $session.ok) { throw "/voice-session returned not ok" }
 if ($session.provider -ne "stt-chat-tts") { throw "/voice-session provider unexpected: $($session.provider)" }
 if (-not $session.capabilities.recordedVoiceNote) { throw "/voice-session missing recorded voice capability" }
 Pass "/voice-session returns provider capabilities"
+
+Step "API /companion-profile"
+$profile = Invoke-RestMethod -Uri "$BaseUrl/companion-profile" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"action":"load"}' -TimeoutSec 30
+if (-not $profile.ok) { throw "/companion-profile returned not ok" }
+if (-not $profile.profile.templateId) { throw "/companion-profile missing templateId" }
+Pass "/companion-profile returns saved companion profile"
 
 Step "API /chat"
 $chatBody = '{"char":"\u5be7\u5be7","history":[{"role":"user","text":"\u6211\u4eca\u5929\u60f3\u804a\u804a\u5065\u5eb7\u548c\u5bb6\u4eba"}]}'

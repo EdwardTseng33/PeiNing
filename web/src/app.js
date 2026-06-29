@@ -31,6 +31,7 @@ let currentChar = CompanionProfile.templateFor(currentAvatarId).backendChar; // 
 let chatHistory = [];            // 多輪對話脈絡
 let chatOpened = false;          // 這次進聊聊她有沒有先開過口
 let chatAudio = null;
+let companionBackendSyncing = false;
 
 /* ===== AvatarRuntime：先把即時 avatar 的共用合約立起來 =====
  * mode=static-css 先用靜態圖 + CSS 呼吸/眨眼/聲波；之後 Ditto / LiveAvatar 只要接這層。 */
@@ -135,6 +136,50 @@ function persistCompanionProfile() {
     nameTouched: companionNameTouched,
   });
 }
+function isStaticPreview() {
+  return location.port === '8135' || location.protocol === 'file:';
+}
+async function companionProfileApi(action, profile) {
+  if (isStaticPreview()) return null;
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 2500);
+  try {
+    const r = await fetch('/companion-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, profile }),
+      signal: ctrl.signal,
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) {
+    return null;
+  } finally {
+    clearTimeout(to);
+  }
+}
+function applyCompanionProfile(profile, options = {}) {
+  const normalized = CompanionProfile.normalizeProfile(profile);
+  currentAvatarId = normalized.templateId;
+  companionDisplayName = normalized.displayName;
+  companionNameTouched = normalized.nameTouched;
+  currentChar = templateFor(currentAvatarId).backendChar;
+  if (options.persist !== false) persistCompanionProfile();
+  syncCompanionUI();
+}
+async function loadCompanionProfileFromBackend() {
+  const r = await companionProfileApi('load');
+  if (r && r.ok && r.profile) applyCompanionProfile(r.profile);
+}
+async function saveCompanionProfileToBackend() {
+  if (companionBackendSyncing) return;
+  companionBackendSyncing = true;
+  try {
+    await companionProfileApi('save', savedCompanionProfile);
+  } finally {
+    companionBackendSyncing = false;
+  }
+}
 function syncCompanionUI() {
   const t = templateFor();
   const display = companionDisplayName.trim() || t.defaultName;
@@ -160,6 +205,7 @@ function setCompanionName(name) {
   companionNameTouched = companionDisplayName.trim().length > 0;
   persistCompanionProfile();
   syncCompanionUI();
+  saveCompanionProfileToBackend();
 }
 function setCompanionTemplate(avatarId) {
   const templateId = CompanionProfile.normalizeTemplateId(avatarId);
@@ -172,6 +218,7 @@ function setCompanionTemplate(avatarId) {
   chatOpened = false;
   voiceProvider.close();
   syncCompanionUI();
+  saveCompanionProfileToBackend();
   const cap = $('#chatCaption');
   if (cap) cap.textContent = '直接說，我在這裡';
 }
@@ -186,8 +233,7 @@ function playB64(b64) {
 }
 // 跟真腦講話；沒有伺服器（純靜態 demo）就回 null、讓畫面自己退回規則版
 async function brainPost(url, body) {
-  const isStaticPreview = location.port === '8135' || location.protocol === 'file:';
-  if (isStaticPreview) return null;
+  if (isStaticPreview()) return null;
   // 加超時護欄：語音腦連不上時，不卡死畫面（§6.5 降級鐵律：對話不斷、老實退回）
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), 6000);
@@ -307,6 +353,7 @@ function toggleTask(item) {
 
 function init() {
   syncCompanionUI();
+  loadCompanionProfileFromBackend();
   avatarRuntime.setState('idle');
   $('#tabBar').addEventListener('click', e => { const b = e.target.closest('.tab-btn'); if (b) showView(b.dataset.view); });
 
@@ -519,6 +566,7 @@ function init() {
       companionNameTouched = companionDisplayName.trim().length > 0;
       persistCompanionProfile();
       syncCompanionUI();
+      saveCompanionProfileToBackend();
     });
   }
   const avatarPick = $('#avatarPick');

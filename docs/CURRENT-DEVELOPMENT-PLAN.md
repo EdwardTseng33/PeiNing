@@ -45,6 +45,7 @@
 - Reduced Home visual density, redesigned the chat entry module, and split thumbnail avatar assets from fullscreen chat avatar assets.
 - Reframed Chat as S2S call-first: visible text is state feedback only; transcript/captions are future accessibility options, not the default product surface.
 - Added a shared browser-side Companion Profile contract so onboarding, Home, Chat, and Settings use the same `templateId` and `displayName`.
+- Added local backend `/companion-profile` persistence as the bridge from prototype local storage to the future account database.
 
 ## Tech Stack Verdict
 
@@ -169,6 +170,7 @@ Work items:
 - [ ] Define `family_group_id` and permission model.
 - [ ] Add conversation memory and retention policy without making raw transcripts the default user-facing surface.
 - [x] Persist prototype companion template/name across onboarding, Home, Chat, and Settings.
+- [x] Add local backend companion profile load/save route.
 - [ ] Add deletion/export requirements to the backlog.
 
 ## Immediate Priority Order
