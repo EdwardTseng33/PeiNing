@@ -110,6 +110,44 @@ print("billing plan", normalized["activePlan"])
 '@ | python -
 Pass "Billing entitlements normalize correctly"
 
+Step "Supabase schema contract"
+@'
+from pathlib import Path
+
+sql = Path("supabase/sql/001_initial_munea_schema.sql").read_text(encoding="utf-8").lower()
+required_tables = [
+    "accounts",
+    "account_members",
+    "persons",
+    "family_groups",
+    "family_memberships",
+    "companion_profiles",
+    "routine_reminders",
+    "voice_sessions",
+    "conversation_summaries",
+    "safety_events",
+    "subscription_ledger",
+    "usage_ledger",
+    "privacy_requests",
+    "audit_events",
+]
+missing = [table for table in required_tables if f"create table if not exists public.{table}" not in sql]
+if missing:
+    raise SystemExit("Missing Supabase tables: " + ", ".join(missing))
+for table in required_tables:
+    token = f"alter table public.{table} enable row level security"
+    if token not in sql:
+        raise SystemExit("Missing RLS enablement: " + table)
+if "revoke all on all tables in schema public from anon" not in sql:
+    raise SystemExit("Missing anon revoke")
+if "grant select, insert, update, delete on all tables in schema public to authenticated" not in sql:
+    raise SystemExit("Missing authenticated grant")
+if "auth.uid()" not in sql:
+    raise SystemExit("Missing auth.uid RLS predicate")
+print("supabase tables", len(required_tables))
+'@ | python -
+Pass "Supabase schema includes tables, RLS, and grants"
+
 Step "Privacy data-rights contract"
 @'
 import os, sys

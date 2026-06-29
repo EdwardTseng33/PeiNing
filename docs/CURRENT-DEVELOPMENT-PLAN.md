@@ -48,6 +48,7 @@
 - Added local backend `/companion-profile` persistence as the bridge from prototype local storage to the future account database.
 - Added `engine/app_profile_store.json` plus `/app-profile` so account, family group, primary person, and companion profiles share one local store before the production database move.
 - Added App Store production readiness baseline: local `/entitlements`, `/subscription-event`, `/privacy-export`, `/account-deletion`, `/healthz`, `engine/billing_store.json`, `engine/privacy_requests.json`, and `docs/APP-STORE-PRODUCTION-READINESS.md`.
+- Added Supabase production database bootstrap files: `supabase/sql/001_initial_munea_schema.sql`, `docs/supabase/SETUP.md`, and `docs/supabase/munea-env.example.txt`.
 
 ## Tech Stack Verdict
 
@@ -177,6 +178,9 @@ Work items:
 - [x] Add local subscription entitlement and usage ledger placeholder.
 - [x] Add App Store production readiness checklist and API safety baseline.
 - [x] Add deletion/export requirements and local data-rights API contracts.
+- [x] Draft Supabase Postgres schema and RLS policy baseline.
+- [ ] Create/live-link Supabase project and run initial SQL.
+- [ ] Convert SQL draft into official Supabase migration after CLI/MCP authentication.
 
 ## Sprint 1-G: App Store Subscription And Trust Layer
 

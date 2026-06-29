@@ -1,0 +1,18 @@
+# Copy these into your real local environment file.
+# Do not commit real values.
+
+MUNEA_DATABASE_PROVIDER=supabase
+
+# Public project settings
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_PROJECT_REF=YOUR_PROJECT_REF
+
+# Browser/client key, only after RLS is correct
+SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_OR_ANON_KEY
+
+# Backend only. Never expose this to web/index.html, Capacitor bundle, or any public client.
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+
+# Optional direct database connection for backend jobs/migrations.
+SUPABASE_DB_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-YOUR-REGION.pooler.supabase.com:6543/postgres
+

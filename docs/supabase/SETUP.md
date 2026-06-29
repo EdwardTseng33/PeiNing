@@ -1,0 +1,137 @@
+# Munea Supabase Setup
+
+Updated: 2026-06-29
+
+This folder documents the first production database path for Munea.
+
+Current status:
+
+- Supabase account exists.
+- Cloud project still needs to be created or connected.
+- Repo now contains the initial SQL schema draft at `supabase/sql/001_initial_munea_schema.sql`.
+- Supabase CLI is not installed in this Windows environment yet, so this is a SQL Editor-ready schema, not an official migration history entry.
+
+## Recommended Project
+
+Use one Supabase project for the first TestFlight backend.
+
+Recommended settings:
+
+- Region: closest stable region to Taiwan users, likely Northeast Asia if available.
+- Database password: generated strong password, stored in a password manager only.
+- Auth: email/password or magic link first; Apple Sign In later for App Store polish.
+- Exposed schema: `public`.
+- Data API: if public tables are not automatically exposed, grant access explicitly and keep RLS enabled.
+
+## First SQL Setup
+
+1. Open Supabase dashboard.
+2. Create or open the Munea project.
+3. Go to SQL Editor.
+4. Paste and run:
+
+```text
+supabase/sql/001_initial_munea_schema.sql
+```
+
+This schema creates:
+
+- `accounts`
+- `account_members`
+- `persons`
+- `family_groups`
+- `family_memberships`
+- `companion_profiles`
+- `routine_reminders`
+- `voice_sessions`
+- `conversation_summaries`
+- `safety_events`
+- `subscription_ledger`
+- `usage_ledger`
+- `privacy_requests`
+- `audit_events`
+
+All public tables have RLS enabled. `anon` is explicitly revoked. `authenticated` gets table grants, then row access is restricted by account membership policies.
+
+## RLS Model
+
+Main rule:
+
+```text
+auth.uid() must match account_members.user_id for the row's account_id.
+```
+
+This means family data is separated by `account_id`. A logged-in user can only see rows for accounts where they are an active member.
+
+Important:
+
+- Do not use `user_metadata` for authorization.
+- Do not expose `service_role` to the app.
+- Do not grant `anon` access to user data tables.
+- Subscription and usage ledger writes should be server-side only.
+- Data export and account deletion jobs should be server-side only.
+
+## Bootstrap Note
+
+The first account/member/person creation should be handled by backend onboarding logic using server credentials, not by letting any authenticated user create arbitrary account rows directly.
+
+For the local prototype, JSON files still exist:
+
+- `engine/app_profile_store.json`
+- `engine/companion_profile.json`
+- `engine/billing_store.json`
+- `engine/privacy_requests.json`
+
+The migration path is:
+
+```text
+local JSON prototype -> Supabase tables -> backend API reads/writes Supabase
+```
+
+## Environment Variables
+
+Use the template:
+
+```text
+docs/supabase/munea-env.example.txt
+```
+
+Never commit real Supabase secrets. The publishable/anon key can be used by a public client only after RLS is correct. The service role key must stay on the backend only.
+
+## After SQL Runs
+
+Run these checks in Supabase SQL Editor:
+
+```sql
+select tablename, rowsecurity
+from pg_tables
+where schemaname = 'public'
+order by tablename;
+```
+
+Every Munea table should show `rowsecurity = true`.
+
+Then run:
+
+```sql
+select table_name, privilege_type, grantee
+from information_schema.role_table_grants
+where table_schema = 'public'
+  and grantee in ('anon', 'authenticated')
+order by table_name, grantee, privilege_type;
+```
+
+Expected:
+
+- `authenticated` has normal table privileges.
+- `anon` should not have access to Munea user data tables.
+
+## Next Implementation Step
+
+Once the Supabase project is created:
+
+1. Add env values to local backend environment.
+2. Add a Supabase database adapter in `engine/`.
+3. Change `/app-profile`, `/companion-profile`, `/entitlements`, `/privacy-export`, and `/account-deletion` to use Supabase behind a feature flag.
+4. Keep JSON fallback for local offline prototype only.
+

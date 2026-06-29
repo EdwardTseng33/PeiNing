@@ -178,6 +178,13 @@ Payment and premium feature access must be server-authoritative. The frontend ca
 
 Data export and account deletion must also be server-authoritative. The app may present the UI, but production deletion/export jobs must run behind authenticated backend workflows with audit logs and retention rules.
 
+Current Supabase setup:
+
+- `supabase/sql/001_initial_munea_schema.sql` defines the first production table and RLS draft.
+- `docs/supabase/SETUP.md` documents dashboard setup and post-SQL verification.
+- `docs/supabase/munea-env.example.txt` lists required environment variables.
+- The schema is SQL Editor-ready; it is not yet applied to a live project from this environment because Supabase CLI/MCP auth is not currently available here.
+
 ## Development Order
 
 The updated order is:
