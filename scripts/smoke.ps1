@@ -148,6 +148,29 @@ print("supabase tables", len(required_tables))
 '@ | python -
 Pass "Supabase schema includes tables, RLS, and grants"
 
+Step "Backend architecture document contract"
+@'
+from pathlib import Path
+
+doc = Path("docs/BACKEND-ARCHITECTURE-v1.md").read_text(encoding="utf-8").lower()
+required = [
+    "api surface v1",
+    "supabase data model v1",
+    "rls and permission matrix",
+    "north star metrics",
+    "analytics event model",
+    "admin console mvp",
+    "subscription and entitlements",
+    "data rights and trust",
+    "development phases",
+]
+missing = [token for token in required if token not in doc]
+if missing:
+    raise SystemExit("Backend architecture doc missing sections: " + ", ".join(missing))
+print("backend architecture sections", len(required))
+'@ | python -
+Pass "Backend architecture document covers required sections"
+
 Step "Privacy data-rights contract"
 @'
 import os, sys

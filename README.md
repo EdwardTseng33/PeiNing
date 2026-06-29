@@ -100,6 +100,8 @@ For App Store readiness, the local backend also includes `engine/billing_store.j
 
 The production database path is Supabase Postgres with Row Level Security. The first SQL schema draft lives in `supabase/sql/001_initial_munea_schema.sql`, with setup notes in `docs/supabase/SETUP.md`. It is SQL Editor-ready; once Supabase CLI is installed and authenticated, convert it into a formal migration.
 
+Backend architecture v1 is tracked in `docs/BACKEND-ARCHITECTURE-v1.md`. It defines the API surface, Supabase/RLS model, subscription entitlement flow, data rights contracts, admin console MVP, and North Star analytics plan.
+
 ---
 
 ## Roadmap
@@ -176,9 +178,10 @@ For current planning truth, read these first:
 9. `docs/VOICE-PROVIDER-ADAPTER.md`
 10. `docs/MOBILE-VOICE-BRIDGE.md`
 11. `docs/APP-STORE-PRODUCTION-READINESS.md`
-12. `docs/supabase/SETUP.md`
-13. `STATUS.md`
-14. `BACKLOG.md`
+12. `docs/BACKEND-ARCHITECTURE-v1.md`
+13. `docs/supabase/SETUP.md`
+14. `STATUS.md`
+15. `BACKLOG.md`
 
 Some older documents still preserve research history and may contain superseded assumptions, especially around GPT-Realtime, full self-hosting language, old character names, and pre-6/28 screen structure. The SPEC file is the current authority.
 
