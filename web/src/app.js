@@ -22,7 +22,7 @@ const TWO_D_AVATARS = new Set(['munea-2d-xiaoyun', 'munea-2d-ayuan', 'munea-2d-m
 
 /* ===== [ENGINE] 角色模板 vs 使用者命名：模板決定外觀/聲音/人格，名字由使用者取 ===== */
 const CHARACTER_TEMPLATES = {
-  'nening-real-female': { backendChar: '寧寧', defaultName: '寧寧', templateLabel: '溫柔型 · 像家人，會照看', fullAsset: 'avatars/nening-real-female-full.png' },
+  'nening-real-female': { backendChar: '寧寧', defaultName: '寧寧', templateLabel: '溫柔型 · 像家人，會照看', homeAsset: 'avatars/nening-real-female-full.png', fullAsset: 'avatars/nening-real-female-full.png' },
   'companion-real-male': { backendChar: '阿宏', defaultName: '阿宏', templateLabel: '沉穩型 · 像大哥，很可靠' },
   'munea-2d-xiaoyun': { backendChar: '小昀', defaultName: '小昀', templateLabel: '開朗型 · 像朋友，很有朝氣' },
   'munea-2d-ayuan': { backendChar: '阿原', defaultName: '阿原', templateLabel: '隨和型 · 鄰家感，好聊天' },
@@ -125,6 +125,7 @@ function syncCompanionUI() {
   const t = templateFor();
   const display = companionDisplayName.trim() || t.defaultName;
   const src = 'avatars/' + currentAvatarId + '.png';
+  const homeSrc = t.homeAsset || src;
   const fullSrc = t.fullAsset || src;
   const homeName = $('#companionHomeName'); if (homeName) homeName.textContent = display;
   const chatName = $('#chatName'); if (chatName) chatName.textContent = display;
@@ -135,7 +136,7 @@ function syncCompanionUI() {
   const nameInput = $('#companionNameInput');
   if (nameInput && document.activeElement !== nameInput && nameInput.value !== display) nameInput.value = display;
   const fimg = $('#faceImg'); if (fimg) fimg.src = fullSrc;
-  $$('.bc-avatar img').forEach(i => { i.src = src; });
+  $$('.bc-avatar img').forEach(i => { i.src = homeSrc; });
   $$('#avatarPick .avo').forEach(o => o.classList.toggle('on', o.dataset.ava === currentAvatarId));
   avatarRuntime.setCharacter(display, currentAvatarId);
 }
