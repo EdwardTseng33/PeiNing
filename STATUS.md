@@ -17,6 +17,7 @@
 - ✅ 前端新增 `window.MuneaAvatarRuntime`：`setState`、`setCharacter`、`speak`、`onAudioEnd`。
 - ✅ Avatar engine mode 往前推：`static-css`、`2d-viseme`、`ditto`、`liveavatar`；2D 角色已可跑 mock mouth-state。
 - ✅ RunPod Avatar PoC 路線補齊：Ditto 先復測 online fps；LiveAvatar 尚未排，先走 H100/H200 單卡 FP8 首測，不直接燒 5×H800。
+- ✅ 技術棧審查完成：保留 Capacitor + Web Core；語音改為 Voice Provider Adapter；資料層建議 Postgres + RLS；Avatar 保持 Runtime/2D 保底，Ditto/LiveAvatar 只在 RunPod gate 通過後接。
 - ✅ `scripts/smoke.ps1` 新增 `node --check web/src/app.js`，避免前端 runtime 改動沒被驗收。
 - ✅ `npm run smoke` 全綠：`/open`、`/chat`、`/voice-note`、語音 payload、JS syntax 都通過。
 

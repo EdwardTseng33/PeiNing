@@ -39,6 +39,16 @@
 - Added Avatar engine modes and the first mock 2D viseme mouth-state layer.
 - Added `docs/AVATAR-RUNTIME-QA.md` for local and iPhone visual QA.
 - Added `docs/RUNPOD-AVATAR-POC-SCHEDULE.md` to anchor Ditto retest and first LiveAvatar benchmark around the RunPod console.
+- Added `docs/TECH-STACK-EVALUATION-2026-06-29.md` to review the full product stack and confirm the best path.
+
+## Tech Stack Verdict
+
+- Keep Capacitor + Web Core for first iOS TestFlight.
+- Add a Voice Provider Adapter instead of hard-coding one Gemini model/version.
+- Move data from local JSON to Postgres + RLS before multi-user testing.
+- Keep Avatar Runtime and 2D viseme as the first TestFlight-safe face path.
+- Keep Ditto / LiveAvatar behind measured RunPod PoC gates.
+- Implement push and subscription/ledger foundations earlier than visual polish.
 
 ## Sprint 1-B: Handoff Baseline
 
@@ -98,7 +108,8 @@ Go/no-go:
 Goal: shift from current POST-based demo to real-time speech interaction.
 
 Work items:
-- [ ] Confirm Gemini Live API shape and auth model.
+- [ ] Define `MuneaVoiceProvider` adapter.
+- [ ] Confirm Gemini Live / Interactions API shape and auth model.
 - [ ] Define frontend audio stream format.
 - [ ] Build smallest loop: listen -> send -> receive voice -> play.
 - [ ] Preserve fallback to typed/static demo mode.

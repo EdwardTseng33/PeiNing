@@ -56,7 +56,7 @@ Hot path for `聊聊`.
 - English second.
 - Taiwanese Hokkien remains research only.
 - Current prototype uses Gemini generation + TTS.
-- Target direction is a real-time voice loop, subject to integration tests.
+- Target direction is a real-time voice loop behind a `MuneaVoiceProvider` adapter, with Gemini Live / Interactions as the first candidate rather than a hard-coded dependency.
 
 ### Butler Brain
 
@@ -111,6 +111,8 @@ Native responsibilities:
 ## Data Layer
 
 The local JSON demo must be replaced before multi-user testing.
+
+Recommended first production path: Postgres with row-level tenant isolation.
 
 Minimum tables / collections:
 
