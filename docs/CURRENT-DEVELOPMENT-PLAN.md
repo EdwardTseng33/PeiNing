@@ -38,6 +38,7 @@
 - Added frontend `MuneaAvatarRuntime` as the future insertion point for 2D viseme, Ditto, and LiveAvatar.
 - Added Avatar engine modes and the first mock 2D viseme mouth-state layer.
 - Added `docs/AVATAR-RUNTIME-QA.md` for local and iPhone visual QA.
+- Added `docs/RUNPOD-AVATAR-POC-SCHEDULE.md` to anchor Ditto retest and first LiveAvatar benchmark around the RunPod console.
 
 ## Sprint 1-B: Handoff Baseline
 
@@ -125,6 +126,22 @@ Work items:
 Go/no-go:
 - If 2D viseme is smooth on iPhone, use it as the first TestFlight avatar path.
 - If Ditto / LiveAvatar PoC clears fps and cold-start gates, attach it behind the same runtime.
+
+## Sprint 1-E3: RunPod Avatar PoC
+
+Goal: turn the prior Ditto RunPod test and the unscheduled LiveAvatar benchmark into measurable go/no-go gates.
+
+Work items:
+- [x] Record RunPod console as the operating reference: `https://console.runpod.io/pods`.
+- [x] Create a unified Ditto / LiveAvatar RunPod schedule and measurement form.
+- [ ] Reopen or recreate the prior Ditto RTX 4090 pod and run online fps retest.
+- [ ] Schedule LiveAvatar first benchmark on H100/H200 80GB+ single-card FP8 path.
+- [ ] Record fps, cold start, VRAM, output path, quality verdict, and stop pod immediately after testing.
+
+Go/no-go:
+- Ditto online `>=25 it/s` with acceptable mouth sync: promote `ditto` from reserved mode to integration candidate.
+- LiveAvatar `>=40 fps` and cold start can be hidden: keep `liveavatar` as premium candidate.
+- Otherwise keep first TestFlight on `2d-viseme` + `static-css` fallback.
 
 ## Sprint 1-F: Data And Safety Foundation
 

@@ -159,9 +159,10 @@ For current planning truth, read these first:
 4. `docs/ARCHITECTURE.md`
 5. `docs/PRODUCT-ARCHITECTURE-AVATAR-FIRST-PLAN.md`
 6. `docs/AVATAR-RUNTIME-QA.md`
-7. `docs/MOBILE-VOICE-BRIDGE.md`
-8. `STATUS.md`
-9. `BACKLOG.md`
+7. `docs/RUNPOD-AVATAR-POC-SCHEDULE.md`
+8. `docs/MOBILE-VOICE-BRIDGE.md`
+9. `STATUS.md`
+10. `BACKLOG.md`
 
 Some older documents still preserve research history and may contain superseded assumptions, especially around GPT-Realtime, full self-hosting language, old character names, and pre-6/28 screen structure. The SPEC file is the current authority.
 
