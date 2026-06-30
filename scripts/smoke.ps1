@@ -310,6 +310,38 @@ print("account bootstrap OK")
 '@ | python -
 Pass "Account bootstrap creates local account/family/person/companion store"
 
+Step "Auth token verification contract"
+@'
+import os, sys
+os.environ.setdefault("GEMINI_API_KEY", "smoke-test-key")
+sys.path.insert(0, "engine")
+import server
+
+assert server.extract_bearer_token({"Authorization": "Bearer abc.def"}) == "abc.def"
+assert server.verify_auth_context({})["code"] == "auth_token_missing"
+
+os.environ["MUNEA_ENABLE_DEV_AUTH_BYPASS"] = "true"
+dev_token = "dev-local-token-00000000-0000-4000-8000-000000000001"
+dev = server.verify_auth_context({"Authorization": "Bearer " + dev_token})
+assert dev["ok"] is True
+assert dev["authUserId"] == "00000000-0000-4000-8000-000000000001"
+assert dev["developerMode"] is True
+status = server.auth_status_response({"Authorization": "Bearer " + dev_token})
+assert status["ok"] is True
+assert status["auth"]["provider"] == "dev-bypass"
+del os.environ["MUNEA_ENABLE_DEV_AUTH_BYPASS"]
+
+os.environ["SUPABASE_URL"] = "https://example.supabase.co"
+os.environ["SUPABASE_ANON_KEY"] = "public-test-key"
+missing_remote = server.verify_auth_context({"Authorization": "Bearer fake-token"})
+assert missing_remote["ok"] is False
+assert missing_remote["code"] in {"invalid_auth_token", "auth_verification_unavailable"}
+del os.environ["SUPABASE_URL"]
+del os.environ["SUPABASE_ANON_KEY"]
+print("auth verification OK")
+'@ | python -
+Pass "Auth token verification contract is valid"
+
 Step "Product event and North Star contract"
 @'
 import os, sys, tempfile
@@ -906,6 +938,7 @@ Pass "/entitlements returns subscription gates"
 Step "API /healthz"
 $health = Invoke-RestMethod -Uri "$BaseUrl/healthz" -Method Get -TimeoutSec 30
 if (-not $health.ok) { throw "/healthz returned not ok" }
+if ($health.contracts -notcontains "auth-status") { throw "/healthz missing auth-status contract" }
 if ($health.contracts -notcontains "account-bootstrap") { throw "/healthz missing account-bootstrap contract" }
 if ($health.contracts -notcontains "entitlements") { throw "/healthz missing entitlements contract" }
 if ($health.contracts -notcontains "avatar-session") { throw "/healthz missing avatar-session contract" }

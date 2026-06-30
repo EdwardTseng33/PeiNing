@@ -33,6 +33,7 @@ The working north star is an AI health-care companion for everyday life. Older-a
 
 3. **Three brains, one face**
    The live conversation, background care planning, and safety referral logic are separated so the app can feel responsive while still becoming personal over time.
+   These are responsibility layers, not three fixed model names: Reflex is the real-time conversation loop, Butler is background care context, and Guardian is safety/referral logic. Ditto and LiveAvatar are face engines, not extra conversation brains.
 
 4. **Proactive, but iOS-realistic**
    When the app is closed, Munea reaches out through iOS push notifications. When opened, it becomes a full voice conversation with a talking face.
@@ -92,10 +93,11 @@ npm run supabase:doctor:live
 
 | Layer | Purpose | Current direction |
 |---|---|---|
-| Reflex brain | Live voice conversation | Gemini 3.1 Flash Live direction; local demo currently uses Gemini generation + TTS |
+| Reflex brain | Live voice conversation | Gemini Live / Interactions candidate behind `MuneaVoiceProvider`; local demo currently uses Gemini generation + TTS |
 | Butler brain | Memory, schedules, context, daily care | Background rules + cheap AI when judgment is needed |
-| Guardian brain | Crisis / anomaly referral | Family notification and hotline referral, not medical judgment |
+| Guardian brain | Crisis / anomaly referral | Deterministic safety rules first; classifier/moderation may assist, but not medical judgment |
 | Face | Fullscreen butler presence | 2D/static now; Ditto / LiveAvatar PoCs decide real lip-sync path |
+| Auth status | Verified session bridge | `/auth-status` validates Bearer-token auth context; `/account-bootstrap` derives `auth.users.id` from verified auth in Supabase mode |
 | Account bootstrap | First account/family/person creation after auth | `/account-bootstrap` previews or creates the backend-owned account graph; Supabase path requires verified `auth.users.id` |
 | Companion identity | User-visible name, template, voice, and avatar asset | User can name the companion; template changes appearance / voice / personality without forcing a fixed public name |
 | Subscription entitlement | App Store subscription and usage ledger | `/entitlements` is the backend source of truth; frontend does not own paid status or Avatar minutes |

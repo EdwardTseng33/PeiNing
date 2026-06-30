@@ -9,6 +9,8 @@ Munea should not hard-code one model name or one vendor API into the app shell.
 
 The first product experience is still `聊聊`: Taiwan Mandarin voice, subtitles, a living face, family context, and health-care boundaries. The voice layer must be replaceable because Gemini Live / Interactions, fallback STT -> chat -> TTS, and future providers have different transport, auth, interruption, and timing behavior.
 
+This adapter belongs to the Reflex Brain only. Butler Brain background context and Guardian Brain safety/referral logic can call AI later, but they should not be coupled to the voice provider. Avatar engines such as Ditto and LiveAvatar consume voice state and audio timing; they are not the conversation model.
+
 ## Current Frontend Contract
 
 `window.MuneaVoiceProvider` is now exposed from `web/src/app.js`.
@@ -74,4 +76,3 @@ This endpoint is the future place to mint a short-lived real-time voice session 
 3. Return ephemeral session details from `/voice-session`.
 4. Add transcript and audio-state events for Avatar Runtime.
 5. Add interruption and viseme timing only after the basic voice loop is stable.
-

@@ -10,6 +10,8 @@
 用法：GEMINI_API_KEY="..." py server.py  → 瀏覽器開 http://localhost:8200
 """
 import os, sys, json, base64, io, wave, time, posixpath
+import urllib.error
+import urllib.request
 from datetime import datetime, timedelta, timezone
 import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -103,6 +105,109 @@ def is_uuid_like(value):
         return True
     except Exception:
         return False
+
+
+def public_supabase_key():
+    return (
+        os.environ.get("SUPABASE_PUBLISHABLE_KEY")
+        or os.environ.get("SUPABASE_ANON_KEY")
+        or os.environ.get("MUNEA_SUPABASE_PUBLISHABLE_KEY")
+        or os.environ.get("MUNEA_SUPABASE_ANON_KEY")
+        or ""
+    )
+
+
+def extract_bearer_token(headers=None):
+    headers = headers or {}
+    raw = headers.get("Authorization") or headers.get("authorization") or ""
+    parts = raw.strip().split(" ", 1)
+    if len(parts) == 2 and parts[0].lower() == "bearer" and parts[1].strip():
+        return parts[1].strip()
+    return None
+
+
+def verify_dev_auth_token(token):
+    if os.environ.get("MUNEA_ENABLE_DEV_AUTH_BYPASS") != "true":
+        return None
+    if not token or not token.startswith("dev-local-token-"):
+        return None
+    auth_user_id = token.replace("dev-local-token-", "", 1).strip()
+    if not auth_user_id:
+        return None
+    return {
+        "ok": True,
+        "provider": "dev-bypass",
+        "developerMode": True,
+        "authUserId": auth_user_id,
+        "email": "developer@munea.local",
+    }
+
+
+def verify_supabase_access_token(token):
+    url = (os.environ.get("SUPABASE_URL") or "").rstrip("/")
+    key = public_supabase_key()
+    if not url or not key:
+        return {"ok": False, "code": "auth_not_configured"}
+    req = urllib.request.Request(
+        url + "/auth/v1/user",
+        headers={
+            "apikey": key,
+            "Authorization": "Bearer " + token,
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        return {"ok": False, "code": "invalid_auth_token", "status": e.code}
+    except Exception:
+        return {"ok": False, "code": "auth_verification_unavailable"}
+    auth_user_id = payload.get("id") or payload.get("sub")
+    if not is_uuid_like(auth_user_id):
+        return {"ok": False, "code": "invalid_auth_user"}
+    return {
+        "ok": True,
+        "provider": payload.get("app_metadata", {}).get("provider") or "supabase",
+        "developerMode": False,
+        "authUserId": auth_user_id,
+        "email": payload.get("email"),
+        "user": payload,
+    }
+
+
+def verify_auth_context(headers=None):
+    token = extract_bearer_token(headers)
+    if not token:
+        return {"ok": False, "code": "auth_token_missing"}
+    dev = verify_dev_auth_token(token)
+    if dev:
+        return dev
+    return verify_supabase_access_token(token)
+
+
+def public_auth_context(auth_context):
+    return {
+        "verified": bool(auth_context.get("ok")),
+        "provider": auth_context.get("provider"),
+        "developerMode": bool(auth_context.get("developerMode")),
+        "authUserId": auth_context.get("authUserId"),
+        "email": auth_context.get("email"),
+        "errorCode": None if auth_context.get("ok") else auth_context.get("code"),
+    }
+
+
+def auth_status_response(headers=None):
+    auth_context = verify_auth_context(headers)
+    return {
+        "ok": bool(auth_context.get("ok")),
+        "auth": public_auth_context(auth_context),
+        "error": None if auth_context.get("ok") else {
+            "code": auth_context.get("code") or "auth_invalid",
+            "requestId": request_id(),
+        },
+    }
 
 
 def read_json_file(path, fallback=None):
@@ -250,28 +355,43 @@ def save_app_profile_store(data):
     return store
 
 
-def bootstrap_account_response(data):
+def bootstrap_account_response(data, headers=None):
     data = data or {}
     action = (data.get("action") or "create").lower()
     backend = data_backend()
-    auth_user_id = data.get("authUserId") or data.get("auth_user_id") or data.get("userId") or data.get("user_id")
-    if action != "preview" and backend.enabled() and not is_uuid_like(auth_user_id):
+    auth_context = verify_auth_context(headers)
+    verified_auth_user_id = auth_context.get("authUserId") if auth_context.get("ok") else None
+    if action != "preview" and backend.enabled() and not is_uuid_like(verified_auth_user_id):
         return {
             "ok": False,
             "error": {
                 "code": "auth_user_required",
-                "message": "Account bootstrap requires a verified Supabase Auth user id.",
+                "message": "Account bootstrap requires a verified Supabase Auth bearer token.",
                 "requestId": request_id(),
             },
             "requiresAuth": True,
+            "auth": public_auth_context(auth_context),
             "backend": data_backend_status(),
         }
     try:
-        remote_store = None if action == "preview" else backend.bootstrap_account(data)
+        bootstrap_payload = {**data}
+        if verified_auth_user_id:
+            bootstrap_payload.update({
+                "authUserId": verified_auth_user_id,
+                "authProvider": auth_context.get("provider"),
+                "authEmail": auth_context.get("email"),
+            })
+        remote_store = None if action == "preview" else backend.bootstrap_account(bootstrap_payload)
         if remote_store:
             store = normalize_app_profile_store(remote_store)
             append_product_event({"eventName": "account_bootstrapped", "properties": {"backend": "supabase"}})
-            return {"ok": True, "store": store, "activeCompanionProfile": active_companion_profile(store), "backend": data_backend_status()}
+            return {
+                "ok": True,
+                "store": store,
+                "activeCompanionProfile": active_companion_profile(store),
+                "auth": public_auth_context(auth_context),
+                "backend": data_backend_status(),
+            }
     except Exception as e:
         if data_backend().enabled():
             raise e
@@ -310,7 +430,13 @@ def bootstrap_account_response(data):
     if action != "preview":
         save_app_profile_store(store)
         append_product_event({"eventName": "account_bootstrapped", "properties": {"backend": "json"}})
-    return {"ok": True, "store": store, "activeCompanionProfile": active_companion_profile(store), "backend": data_backend_status()}
+    return {
+        "ok": True,
+        "store": store,
+        "activeCompanionProfile": active_companion_profile(store),
+        "auth": public_auth_context(auth_context),
+        "backend": data_backend_status(),
+    }
 
 
 def active_companion_profile(store=None):
@@ -989,7 +1115,7 @@ class H(BaseHTTPRequestHandler):
                 "ok": True,
                 "service": "munea-local-engine",
                 "time": utc_now(),
-                "contracts": ["account-bootstrap", "app-profile", "companion-profile", "entitlements", "voice-session", "avatar-session", "product-event", "admin-north-star", "privacy-export", "account-deletion"],
+                "contracts": ["auth-status", "account-bootstrap", "app-profile", "companion-profile", "entitlements", "voice-session", "avatar-session", "product-event", "admin-north-star", "privacy-export", "account-deletion"],
                 "backend": data_backend_status(),
             })
             return
@@ -1031,8 +1157,10 @@ class H(BaseHTTPRequestHandler):
                 self._json(companion_profile_response(data))
             elif self.path == "/app-profile":
                 self._json(app_profile_response(data))
+            elif self.path == "/auth-status":
+                self._json(auth_status_response(self.headers))
             elif self.path == "/account-bootstrap":
-                self._json(bootstrap_account_response(data))
+                self._json(bootstrap_account_response(data, self.headers))
             elif self.path == "/entitlements":
                 self._json(entitlements_response(data))
             elif self.path == "/subscription-event":

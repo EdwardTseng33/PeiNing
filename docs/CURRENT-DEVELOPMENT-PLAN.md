@@ -1,6 +1,6 @@
 # Munea Current Development Plan
 
-> Updated: 2026-06-29
+> Updated: 2026-06-30
 > Purpose: current execution plan for turning the runnable prototype into a first TestFlight path.
 
 ## Current Truth
@@ -66,6 +66,8 @@
 - Added browser Auth Bridge v0: `web/src/auth.js` exposes `window.MuneaAuth` for Apple, Google, email magic link/OTP, guest mode, sign-out, and Bearer-token API headers when a Supabase session exists. `web/src/auth-config.example.js` documents publishable-key-only browser configuration.
 - Added local-only developer mode foundation: `MUNEA_DEV_CONFIG` can auto sign-in, skip onboarding, and mark all developer/test events as analytics-excluded. North Star summaries now exclude developer/internal/test/QA/ops events and configured excluded ids.
 - Added Settings account UI foundation: guest/signed-in/developer status card, Apple/Google/email sign-in sheet, sign-out control, and developer-mode entry when local bypass is allowed.
+- Documented the AI model boundary: the "three brains" are product responsibility layers, not three fixed models. Reflex is real-time conversation, Butler is background care context, Guardian is safety/referral, and Ditto/LiveAvatar are face engines.
+- Added backend Auth verification foundation: `/auth-status` validates bearer-token auth context, and Supabase `/account-bootstrap` derives `auth.users.id` from verified auth instead of trusting a body-supplied id.
 
 ## Tech Stack Verdict
 
@@ -217,9 +219,10 @@ Work items:
 - [x] Implement Supabase Auth frontend bridge foundation for Sign in with Apple, Google, and email magic link/OTP.
 - [x] Add local-only developer bypass and analytics exclusion for test/developer accounts.
 - [x] Add production login UI foundation for Apple, Google, email OTP, sign-out, and local developer entry.
+- [x] Add backend token verification foundation and derive `auth.users.id` from `Authorization: Bearer <access_token>` before Supabase account bootstrap.
 - [ ] Test configured Supabase Auth providers end-to-end.
-- [ ] Add backend token verification and derive `auth.users.id` from `Authorization: Bearer <access_token>`.
-- [ ] Convert `/account-bootstrap` away from trusting body-provided `authUserId`.
+- [ ] Test backend token verification against a live Supabase Auth session.
+- [ ] Convert remaining production endpoints away from body-provided identity fields.
 - [ ] Add real local `engine/.env.local` values and run `npm run supabase:doctor:live`.
 - [ ] Convert SQL draft into official Supabase migration after CLI/MCP authentication.
 

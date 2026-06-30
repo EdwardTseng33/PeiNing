@@ -19,7 +19,8 @@ Current state:
 - `/product-event` now records product analytics events, and `/admin/north-star` provides the first token-gated North Star summary contract.
 - The web prototype now emits safe product events for Chat start/completion, voice turns, voice-note upload, Avatar session start/completion, and routine completion. It does not send raw transcript text to analytics.
 - `/account-bootstrap` now defines the backend-owned account/member/person/family/companion creation contract for the future Supabase Auth or Apple Sign-In flow. In production it requires a verified `auth.users.id`; local prototype fallback can preview/create a JSON store.
-- The web onboarding/settings flow now calls the `/account-bootstrap` contract through a one-time browser bootstrap flag. Local JSON mode can create the prototype account graph immediately; Supabase mode returns `auth_user_required` until a verified Auth / Apple Sign-In user id is available.
+- `/auth-status` now defines the backend token verification contract. Supabase mode verifies `Authorization: Bearer <access_token>` against Supabase Auth and derives the real `auth.users.id`; local developer bypass is env-gated and marked as developer mode.
+- The web onboarding/settings flow now calls the `/account-bootstrap` contract through a one-time browser bootstrap flag. Local JSON mode can create the prototype account graph immediately; Supabase mode returns `auth_user_required` until a verified Auth / Apple Sign-In bearer token is available.
 - Auth/onboarding v1 is now locked in `docs/AUTH-ONBOARDING-ARCHITECTURE-v1.md`: v1 providers are Sign in with Apple, Google, and email magic link/OTP fallback; Facebook is intentionally out of v1.
 - Production API contracts are partially represented in `engine/server.py`.
 - Admin and analytics are not built yet, but their data model must be planned now.
@@ -65,7 +66,7 @@ Auth provider decision:
 Production auth rule:
 
 - frontend may hold a Supabase session, but backend APIs must receive `Authorization: Bearer <access_token>`.
-- backend must verify the token and derive the real `auth.users.id`.
+- backend must verify the token through `/auth-status` / shared auth context helpers and derive the real `auth.users.id`.
 - production `/account-bootstrap` must not trust `authUserId` supplied in the JSON body.
 - user-editable metadata must not drive authorization.
 
@@ -95,6 +96,7 @@ Errors:
 
 | Endpoint | Method | Purpose | Auth | Production source |
 |---|---|---|---|---|
+| `/auth-status` | POST | Verify bearer token and return safe auth context | optional/required by caller | Supabase Auth |
 | `/app-profile` | GET/POST | Account, family group, primary person, companion profile aggregate | required | `accounts`, `persons`, `family_groups`, `family_memberships`, `companion_profiles` |
 | `/account-bootstrap` | POST | Create first account/member/person/family/companion rows after auth | required | `accounts`, `account_members`, `persons`, `family_groups`, `family_memberships`, `companion_profiles` |
 | `/companion-profile` | GET/POST | Active companion identity for current person | required | `companion_profiles` |
