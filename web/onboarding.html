@@ -254,6 +254,8 @@
   const Profile = window.MuneaCompanionProfile;
   const companionNameInput = document.getElementById('companionNameSetup');
   const doneCompanionPreview = document.getElementById('doneCompanionPreview');
+  const ACCOUNT_BOOTSTRAP_KEY = 'munea.accountBootstrapped.v1';
+  const ONBOARDING_COMPLETED_KEY = 'munea.onboardingCompleted.v1';
   let companionNameTouched = false;
   let i = 0;
   let mode = 'family';   // 'family' 幫家人裝 / 'self' 自己用
@@ -303,6 +305,38 @@
       nameTouched: companionNameTouched,
     });
   }
+  function isStaticPreview() {
+    return location.port === '8135' || location.protocol === 'file:';
+  }
+  function storageSet(key, value) {
+    try { localStorage.setItem(key, value); } catch (e) {}
+  }
+  async function bootstrapAccount(profile) {
+    storageSet(ONBOARDING_COMPLETED_KEY, 'true');
+    if (isStaticPreview()) return null;
+    try {
+      const r = await fetch('/account-bootstrap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          displayName: profile.displayName,
+          companionProfile: profile,
+          locale: 'zh-TW',
+          timezone: 'Asia/Taipei',
+          preferredLanguages: ['zh-TW', 'en'],
+          source: 'web-onboarding',
+        }),
+      });
+      if (!r.ok) return null;
+      const data = await r.json();
+      if (data && data.ok) storageSet(ACCOUNT_BOOTSTRAP_KEY, 'true');
+      else if (data && data.error && data.error.code === 'auth_user_required') storageSet(ACCOUNT_BOOTSTRAP_KEY, 'pending-auth');
+      return data;
+    } catch (e) {
+      return null;
+    }
+  }
   function updateDonePreview() {
     if (!doneCompanionPreview) return;
     const name = companionName();
@@ -332,9 +366,13 @@
   }));
   nextBtn.style.display = 'none';   // 第 0 步用兩個入口、不顯示底部按鈕
 
-  nextBtn.addEventListener('click', () => {
+  nextBtn.addEventListener('click', async () => {
     if (i < last) { i++; render(); }
-    else { saveCompanionProfile(); window.location.href = 'index.html'; }   // 交給長輩 → 長輩端 App
+    else {
+      const profile = saveCompanionProfile();
+      await bootstrapAccount(profile);
+      window.location.href = 'index.html';
+    }   // 交給長輩 → 長輩端 App
   });
   dashBtn.addEventListener('click', () => { window.location.href = 'family.html'; });
 

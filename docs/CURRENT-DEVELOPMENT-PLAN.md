@@ -61,6 +61,7 @@
 - Added `supabase/sql/003_analytics_admin_foundation.sql`, `/product-event`, and token-gated `/admin/north-star` as the first North Star/Admin MVP data contract.
 - Connected the web prototype to `/product-event` for safe Chat, Voice, Avatar, and routine-completion analytics without sending transcript text.
 - Added `/account-bootstrap` as the backend-owned contract for creating account/member/person/family/companion rows after Supabase Auth or Apple Sign-In.
+- Connected onboarding/settings to the account bootstrap contract with a one-time frontend bootstrap flag. Local JSON mode now creates the prototype account graph from the selected companion profile; Supabase mode fails safely with `auth_user_required` until verified Auth exists.
 
 ## Tech Stack Verdict
 
@@ -207,6 +208,7 @@ Work items:
 - [x] Add backend `/product-event` and token-gated `/admin/north-star` contracts.
 - [x] Emit safe frontend product events from Chat / Voice / Avatar / routine flows.
 - [x] Add account bootstrap contract with local preview/create and Supabase adapter path.
+- [x] Connect onboarding/settings to `/account-bootstrap` with safe retry and Auth-required handling.
 - [ ] Add real local `engine/.env.local` values and run `npm run supabase:doctor:live`.
 - [ ] Convert SQL draft into official Supabase migration after CLI/MCP authentication.
 

@@ -109,7 +109,7 @@ Companion identity is intentionally split: `display_name` is what the user calls
 
 Chat is designed as speech-to-speech by default. The main experience should feel like a video call, not a transcript reader; visible text is limited to call state, safety prompts, and future optional accessibility captions.
 
-The prototype now uses one Companion Profile across onboarding, Home, Chat, and Settings. Static preview stores it in local storage; full app mode also syncs it through `/companion-profile`. The local backend now mirrors that profile into `engine/app_profile_store.json`, which keeps account, family group, primary person, and companion profiles in one shape before the same model moves into the production database.
+The prototype now uses one Companion Profile across onboarding, Home, Chat, and Settings. Static preview stores it in local storage; full app mode also syncs it through `/companion-profile`. The local backend now mirrors that profile into `engine/app_profile_store.json`, which keeps account, family group, primary person, and companion profiles in one shape before the same model moves into the production database. Onboarding and Settings also bridge into `/account-bootstrap` with a one-time browser flag, so the first selected companion profile can initialize the account graph without repeatedly recreating it.
 
 For App Store readiness, the local backend also includes `engine/billing_store.json`, `/entitlements`, `/subscription-event`, and `/healthz` contracts. These are prototype contracts for the production StoreKit / App Store Server API / RevenueCat path; production must verify signed subscription events server-side before granting paid entitlements.
 

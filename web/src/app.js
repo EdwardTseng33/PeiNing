@@ -32,9 +32,12 @@ let chatHistory = [];            // 多輪對話脈絡
 let chatOpened = false;          // 這次進聊聊她有沒有先開過口
 let chatAudio = null;
 let companionBackendSyncing = false;
+let accountBootstrapSyncing = false;
 let activeChatSessionId = null;
 let activeChatStartedAt = 0;
 let activeChatTurnCount = 0;
+const ACCOUNT_BOOTSTRAP_KEY = 'munea.accountBootstrapped.v1';
+const ONBOARDING_COMPLETED_KEY = 'munea.onboardingCompleted.v1';
 
 /* ===== AvatarRuntime：先把即時 avatar 的共用合約立起來 =====
  * mode=static-css 先用靜態圖 + CSS 呼吸/眨眼/聲波；之後 Ditto / LiveAvatar 只要接這層。 */
@@ -195,6 +198,53 @@ async function saveCompanionProfileToBackend() {
     companionBackendSyncing = false;
   }
 }
+function storageGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function storageSet(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) {}
+}
+function currentAuthUserId() {
+  const auth = window.MuneaAuth || {};
+  const user = auth.user || auth.currentUser || {};
+  return auth.userId || auth.authUserId || user.id || user.userId || null;
+}
+function accountBootstrapPayload(action = 'create', extra = {}) {
+  const authUserId = currentAuthUserId();
+  const payload = {
+    action,
+    displayName: companionDisplayName.trim() || templateFor().defaultName,
+    companionProfile: savedCompanionProfile,
+    locale: 'zh-TW',
+    timezone: 'Asia/Taipei',
+    preferredLanguages: ['zh-TW', 'en'],
+    source: 'web-prototype',
+    ...extra,
+  };
+  if (authUserId) payload.authUserId = authUserId;
+  return payload;
+}
+async function syncAccountBootstrap(action = 'create', extra = {}) {
+  if (isStaticPreview() || accountBootstrapSyncing) return null;
+  if (action !== 'preview' && storageGet(ACCOUNT_BOOTSTRAP_KEY) === 'true' && !extra.force) return null;
+  accountBootstrapSyncing = true;
+  try {
+    const response = await brainPost('/account-bootstrap', accountBootstrapPayload(action, extra));
+    if (response && response.ok) {
+      storageSet(ACCOUNT_BOOTSTRAP_KEY, 'true');
+      if (response.activeCompanionProfile) applyCompanionProfile(response.activeCompanionProfile);
+      trackProductEvent('onboarding_completed', {
+        bootstrapReason: extra.reason || action,
+        bootstrapBackend: response.backend && response.backend.provider ? response.backend.provider : 'json',
+      });
+    } else if (response && response.error && response.error.code === 'auth_user_required') {
+      storageSet(ACCOUNT_BOOTSTRAP_KEY, 'pending-auth');
+    }
+    return response;
+  } finally {
+    accountBootstrapSyncing = false;
+  }
+}
 function syncCompanionUI() {
   const t = templateFor();
   const display = companionDisplayName.trim() || t.defaultName;
@@ -234,6 +284,7 @@ function setCompanionTemplate(avatarId) {
   voiceProvider.close();
   syncCompanionUI();
   saveCompanionProfileToBackend();
+  syncAccountBootstrap('create', { reason: 'companion_template_updated' });
   const cap = $('#chatCaption');
   if (cap) cap.textContent = '直接說，我在這裡';
 }
@@ -506,7 +557,11 @@ function toggleTask(item) {
 
 function init() {
   syncCompanionUI();
-  loadCompanionProfileFromBackend();
+  loadCompanionProfileFromBackend().finally(() => {
+    if (storageGet(ONBOARDING_COMPLETED_KEY) === 'true' || storageGet(ACCOUNT_BOOTSTRAP_KEY) === 'pending-auth') {
+      syncAccountBootstrap('create', { reason: 'app_init' });
+    }
+  });
   avatarRuntime.setState('idle');
   $('#tabBar').addEventListener('click', e => { const b = e.target.closest('.tab-btn'); if (b) showView(b.dataset.view); });
 
@@ -743,6 +798,7 @@ function init() {
       persistCompanionProfile();
       syncCompanionUI();
       saveCompanionProfileToBackend();
+      syncAccountBootstrap('create', { reason: 'companion_name_updated' });
     });
   }
   const avatarPick = $('#avatarPick');

@@ -19,6 +19,7 @@ Current state:
 - `/product-event` now records product analytics events, and `/admin/north-star` provides the first token-gated North Star summary contract.
 - The web prototype now emits safe product events for Chat start/completion, voice turns, voice-note upload, Avatar session start/completion, and routine completion. It does not send raw transcript text to analytics.
 - `/account-bootstrap` now defines the backend-owned account/member/person/family/companion creation contract for the future Supabase Auth or Apple Sign-In flow. In production it requires a verified `auth.users.id`; local prototype fallback can preview/create a JSON store.
+- The web onboarding/settings flow now calls the `/account-bootstrap` contract through a one-time browser bootstrap flag. Local JSON mode can create the prototype account graph immediately; Supabase mode returns `auth_user_required` until a verified Auth / Apple Sign-In user id is available.
 - Production API contracts are partially represented in `engine/server.py`.
 - Admin and analytics are not built yet, but their data model must be planned now.
 
@@ -83,6 +84,13 @@ Prototype coverage:
 - `/app-profile`
 - `/account-bootstrap`
 - `/companion-profile`
+
+Frontend bridge:
+
+- `web/onboarding.html` saves the selected companion template/name, marks onboarding complete, and attempts `/account-bootstrap`.
+- `web/src/app.js` retries account bootstrap on app init when onboarding is complete or Auth was previously required.
+- Companion name/template edits update `/companion-profile`; they do not recreate the account graph after bootstrap succeeds.
+- Supabase production bootstrap must be triggered only after verified Auth, not from user-editable local metadata.
 
 Missing:
 

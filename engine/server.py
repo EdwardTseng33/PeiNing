@@ -97,6 +97,14 @@ def request_id():
     return "req_" + str(int(time.time() * 1000))
 
 
+def is_uuid_like(value):
+    try:
+        uuid.UUID(str(value or ""))
+        return True
+    except Exception:
+        return False
+
+
 def read_json_file(path, fallback=None):
     try:
         with open(path, encoding="utf-8") as f:
@@ -245,8 +253,21 @@ def save_app_profile_store(data):
 def bootstrap_account_response(data):
     data = data or {}
     action = (data.get("action") or "create").lower()
+    backend = data_backend()
+    auth_user_id = data.get("authUserId") or data.get("auth_user_id") or data.get("userId") or data.get("user_id")
+    if action != "preview" and backend.enabled() and not is_uuid_like(auth_user_id):
+        return {
+            "ok": False,
+            "error": {
+                "code": "auth_user_required",
+                "message": "Account bootstrap requires a verified Supabase Auth user id.",
+                "requestId": request_id(),
+            },
+            "requiresAuth": True,
+            "backend": data_backend_status(),
+        }
     try:
-        remote_store = None if action == "preview" else data_backend().bootstrap_account(data)
+        remote_store = None if action == "preview" else backend.bootstrap_account(data)
         if remote_store:
             store = normalize_app_profile_store(remote_store)
             append_product_event({"eventName": "account_bootstrapped", "properties": {"backend": "supabase"}})

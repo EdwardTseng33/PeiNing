@@ -291,6 +291,21 @@ with tempfile.TemporaryDirectory() as d:
     assert response["activeCompanionProfile"]["templateId"] == "nening-real-female"
     events = server.load_product_events(limit=10)
     assert events[0]["eventName"] == "account_bootstrapped"
+
+    original_backend = server.data_backend
+    class FakeSupabaseBackend:
+        def enabled(self):
+            return True
+        def status(self):
+            return {"provider": "supabase", "enabled": True, "missing": []}
+    try:
+        server.data_backend = lambda: FakeSupabaseBackend()
+        auth_required = server.bootstrap_account_response({"action": "create"})
+        assert auth_required["ok"] is False
+        assert auth_required["error"]["code"] == "auth_user_required"
+        assert auth_required["requiresAuth"] is True
+    finally:
+        server.data_backend = original_backend
 print("account bootstrap OK")
 '@ | python -
 Pass "Account bootstrap creates local account/family/person/companion store"
@@ -653,6 +668,37 @@ for forbidden in ["safeProperties.text", "safeProperties.transcript", "safePrope
 print("voice provider contract OK")
 '@ | python -
 Pass "Voice provider contract is present"
+
+Step "Account bootstrap frontend contract"
+@'
+from pathlib import Path
+js = Path("web/src/app.js").read_text(encoding="utf-8")
+onboarding = Path("web/onboarding.html").read_text(encoding="utf-8")
+required_app = [
+    "syncAccountBootstrap",
+    "accountBootstrapPayload",
+    "ACCOUNT_BOOTSTRAP_KEY",
+    "ONBOARDING_COMPLETED_KEY",
+    "/account-bootstrap",
+    "auth_user_required",
+    "onboarding_completed",
+]
+missing_app = [item for item in required_app if item not in js]
+if missing_app:
+    raise SystemExit("Missing app bootstrap contract pieces: " + ", ".join(missing_app))
+required_onboarding = [
+    "bootstrapAccount",
+    "/account-bootstrap",
+    "munea.onboardingCompleted.v1",
+    "munea.accountBootstrapped.v1",
+    "auth_user_required",
+]
+missing_onboarding = [item for item in required_onboarding if item not in onboarding]
+if missing_onboarding:
+    raise SystemExit("Missing onboarding bootstrap pieces: " + ", ".join(missing_onboarding))
+print("account bootstrap frontend contract OK")
+'@ | python -
+Pass "Frontend onboarding can initialize account bootstrap"
 
 Step "Frontend id references"
 @'
