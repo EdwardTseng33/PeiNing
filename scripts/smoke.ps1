@@ -543,6 +543,38 @@ print("backend architecture sections", len(required))
 '@ | python -
 Pass "Backend architecture document covers required sections"
 
+Step "Auth onboarding architecture document contract"
+@'
+from pathlib import Path
+
+doc = Path("docs/AUTH-ONBOARDING-ARCHITECTURE-v1.md").read_text(encoding="utf-8").lower()
+readme = Path("README.md").read_text(encoding="utf-8").lower()
+setup = Path("docs/supabase/SETUP.md").read_text(encoding="utf-8").lower()
+required = [
+    "sign in with apple",
+    "google",
+    "email magic link",
+    "guest mode",
+    "progressive account",
+    "facebook",
+    "not v1",
+    "authorization: bearer",
+    "account-bootstrap",
+    "auth.users.id",
+]
+missing = [token for token in required if token not in doc]
+if missing:
+    raise SystemExit("Auth onboarding architecture doc missing tokens: " + ", ".join(missing))
+for token in ["auth and onboarding", "docs/auth-onboarding-architecture-v1.md"]:
+    if token not in readme:
+        raise SystemExit("README missing auth architecture pointer: " + token)
+for token in ["sign in with apple", "google", "email magic link/otp", "facebook"]:
+    if token not in setup:
+        raise SystemExit("Supabase setup missing auth provider decision: " + token)
+print("auth onboarding contract OK")
+'@ | python -
+Pass "Auth onboarding architecture is documented"
+
 Step "Repo-backed Codex skill contract"
 @'
 from pathlib import Path

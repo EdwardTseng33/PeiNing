@@ -102,6 +102,7 @@ npm run supabase:doctor:live
 | Avatar session | Runtime mode and premium Avatar usage decision | Chat startup calls `/avatar-session`; backend selects `static-css`, `2d-viseme`, `ditto`, or `liveavatar`, with premium fallback and usage ledger recording |
 | Product analytics | North Star and Admin MVP data | Web core emits safe Chat/Voice/Avatar/routine events to `/product-event`; `/admin/north-star` is token-gated and summarizes Weekly Meaningful Companion Days |
 | App shell | App Store delivery | Capacitor iOS shell planned; microphone bridge is the next go/no-go |
+| Auth and onboarding | Progressive account creation | v1 providers are Sign in with Apple, Google, and email magic link/OTP fallback; guest mode can try the companion before persistence/family/health/payment gates require sign-in |
 
 Critical principle: **conversation continuity beats face fidelity**. If avatar rendering is slow or unavailable, the app should keep the voice conversation alive and degrade the face gracefully.
 
@@ -116,6 +117,8 @@ For App Store readiness, the local backend also includes `engine/billing_store.j
 The production database path is Supabase Postgres with Row Level Security. The first SQL schema draft lives in `supabase/sql/001_initial_munea_schema.sql`, and the deterministic demo seed lives in `supabase/sql/002_demo_bootstrap.sql`, with setup notes in `docs/supabase/SETUP.md`. These are SQL Editor-ready; once Supabase CLI is installed and authenticated, convert them into formal migrations.
 
 Backend architecture v1 is tracked in `docs/BACKEND-ARCHITECTURE-v1.md`. It defines the API surface, Supabase/RLS model, subscription entitlement flow, data rights contracts, admin console MVP, and North Star analytics plan.
+
+Auth and onboarding architecture v1 is tracked in `docs/AUTH-ONBOARDING-ARCHITECTURE-v1.md`. It locks the v1 sign-in providers, guest mode, registration fields, progressive onboarding gates, and the future Supabase Auth bridge.
 
 The backend now includes `engine/supabase_adapter.py`. By default the prototype still uses JSON fallback; setting `MUNEA_DATABASE_PROVIDER=supabase` with backend-only Supabase environment variables enables the Supabase path for companion profile reads/writes and `/app-profile` aggregation.
 
@@ -196,10 +199,11 @@ For current planning truth, read these first:
 10. `docs/MOBILE-VOICE-BRIDGE.md`
 11. `docs/APP-STORE-PRODUCTION-READINESS.md`
 12. `docs/BACKEND-ARCHITECTURE-v1.md`
-13. `docs/supabase/SETUP.md`
-14. `docs/CODEX-SKILLS-SETUP.md`
-15. `STATUS.md`
-16. `BACKLOG.md`
+13. `docs/AUTH-ONBOARDING-ARCHITECTURE-v1.md`
+14. `docs/supabase/SETUP.md`
+15. `docs/CODEX-SKILLS-SETUP.md`
+16. `STATUS.md`
+17. `BACKLOG.md`
 
 Some older documents still preserve research history and may contain superseded assumptions, especially around GPT-Realtime, full self-hosting language, old character names, and pre-6/28 screen structure. The SPEC file is the current authority.
 

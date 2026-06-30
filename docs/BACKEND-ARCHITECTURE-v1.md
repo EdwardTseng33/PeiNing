@@ -20,6 +20,7 @@ Current state:
 - The web prototype now emits safe product events for Chat start/completion, voice turns, voice-note upload, Avatar session start/completion, and routine completion. It does not send raw transcript text to analytics.
 - `/account-bootstrap` now defines the backend-owned account/member/person/family/companion creation contract for the future Supabase Auth or Apple Sign-In flow. In production it requires a verified `auth.users.id`; local prototype fallback can preview/create a JSON store.
 - The web onboarding/settings flow now calls the `/account-bootstrap` contract through a one-time browser bootstrap flag. Local JSON mode can create the prototype account graph immediately; Supabase mode returns `auth_user_required` until a verified Auth / Apple Sign-In user id is available.
+- Auth/onboarding v1 is now locked in `docs/AUTH-ONBOARDING-ARCHITECTURE-v1.md`: v1 providers are Sign in with Apple, Google, and email magic link/OTP fallback; Facebook is intentionally out of v1.
 - Production API contracts are partially represented in `engine/server.py`.
 - Admin and analytics are not built yet, but their data model must be planned now.
 
@@ -46,6 +47,27 @@ Do not build more product features that create important data before the account
 8. Every manual admin operation must create an audit event.
 
 ## API Surface v1
+
+### Auth And Onboarding
+
+Munea should use progressive account creation:
+
+```text
+guest companion trial -> auth gate when persistence/family/health/subscription is needed -> account bootstrap after verified auth
+```
+
+Auth provider decision:
+
+- v1: Sign in with Apple, Google, email magic link/OTP fallback.
+- not v1: Facebook and email password.
+- future: phone OTP if Taiwan older-user support requires it.
+
+Production auth rule:
+
+- frontend may hold a Supabase session, but backend APIs must receive `Authorization: Bearer <access_token>`.
+- backend must verify the token and derive the real `auth.users.id`.
+- production `/account-bootstrap` must not trust `authUserId` supplied in the JSON body.
+- user-editable metadata must not drive authorization.
 
 All production API responses should use this envelope:
 

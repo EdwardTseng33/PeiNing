@@ -23,7 +23,7 @@ Recommended settings:
 
 - Region: closest stable region to Taiwan users, likely Northeast Asia if available.
 - Database password: generated strong password, stored in a password manager only.
-- Auth: email/password or magic link first; Apple Sign In later for App Store polish.
+- Auth: Sign in with Apple, Google, and email magic link/OTP fallback for v1. Facebook and email password are not v1.
 - Exposed schema: `public`.
 - Data API: if public tables are not automatically exposed, grant access explicitly and keep RLS enabled.
 
@@ -94,6 +94,18 @@ MUNEA_SUPABASE_FAMILY_GROUP_ID=33333333-3333-4333-8333-333333333333
 The seed does not require a Supabase Auth user because the local backend adapter uses the service role key. To test authenticated RLS from a client session, edit `demo_user_id` inside `002_demo_bootstrap.sql` and set it to a real `auth.users.id` before running it.
 
 For real onboarding after Supabase Auth or Apple Sign-In, use the backend `/account-bootstrap` contract instead of copying the demo seed. The Supabase adapter requires a verified `auth.users.id` and creates the first `accounts`, `account_members`, `persons`, `family_groups`, `family_memberships`, and `companion_profiles` rows from the backend service-role environment.
+
+Auth/onboarding source of truth:
+
+```text
+docs/AUTH-ONBOARDING-ARCHITECTURE-v1.md
+```
+
+The v1 product direction is progressive onboarding:
+
+- guest users can choose/name a companion and try a limited local/demo experience.
+- sign-in is required for cloud persistence, family, health reminders, Apple Health, subscriptions, premium Avatar, data export, and account deletion.
+- production APIs should use `Authorization: Bearer <access_token>` and derive the auth user id server-side.
 
 ## RLS Model
 
