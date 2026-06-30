@@ -1,6 +1,6 @@
 # Munea App Store Production Readiness
 
-Updated: 2026-06-29
+Updated: 2026-07-01
 
 Purpose: turn Munea from prototype into an App Store product with subscriptions, health-care boundaries, user data safety, and maintainable backend contracts.
 
@@ -69,16 +69,33 @@ Production rule:
 
 - The frontend must never be the source of truth for paid status, Avatar minutes, family member limits, or premium feature gates.
 
+Initial subscription ladder:
+
+```text
+Free -> Plus -> Premium -> Concierge
+```
+
+Detailed billing, credits, and entitlement rules are tracked in `docs/BILLING-CREDITS-ENTITLEMENT-v1.md`.
+
+Billing design principle:
+
+```text
+Subscription = base access and trust
+Credits = expensive or bursty premium capacity
+```
+
+Credits should not gate safety/referral flows, basic privacy controls, account deletion, data export, or essential companion access.
+
 Initial entitlement gates:
 
-| Entitlement | Free | Paid |
-|---|---:|---:|
-| Voice companion | yes | yes |
-| Routine reminders | yes | yes |
-| Family dashboard | limited | expanded |
-| Family members | 2 | configurable |
-| Real-time premium Avatar | no | yes |
-| Premium Avatar minutes | 0 | monthly grant + ledger |
+| Entitlement | Free | Plus | Premium | Concierge |
+|---|---:|---:|---:|---:|
+| Voice companion | yes | yes | yes | yes |
+| Routine reminders | basic | yes | yes | yes |
+| Family dashboard | limited | expanded | expanded | concierge |
+| Family members | 2 | 4 | 8 | custom/high |
+| Real-time premium Avatar | no | limited trial only | yes | yes |
+| Premium Avatar minutes | 0 | small/month | monthly grant | large/custom grant |
 
 ## Data Safety Model
 
@@ -205,6 +222,7 @@ Before TestFlight:
 - permission prompts reviewed.
 - restore purchases flow designed.
 - `/healthz`, `/app-profile`, `/entitlements`, `/voice-session` reachable.
+- `supabase/sql/006_billing_credits_foundation.sql` reviewed/applied if credits will appear in TestFlight.
 - privacy policy draft complete.
 - account deletion and data export requirements written.
 
@@ -222,6 +240,7 @@ Before public launch:
 
 - subscription webhook verification live.
 - backend entitlement ledger live.
+- credit wallet ledger live if consumable credits are sold.
 - database RLS or equivalent tenant isolation verified.
 - crash and error monitoring installed.
 - delete/export request path ready.

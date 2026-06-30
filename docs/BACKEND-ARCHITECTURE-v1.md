@@ -29,6 +29,7 @@ Current state:
 - `/perception/snapshot` now provides the API and adapter contract for storing/listing real-world perception facts through Supabase `perception_snapshots` or JSON fallback.
 - The web onboarding/settings flow now calls the `/account-bootstrap` contract through a one-time browser bootstrap flag. Local JSON mode can create the prototype account graph immediately; Supabase mode returns `auth_user_required` until a verified Auth / Apple Sign-In bearer token is available.
 - Auth/onboarding v1 is now locked in `docs/AUTH-ONBOARDING-ARCHITECTURE-v1.md`: v1 providers are Sign in with Apple, Google, and email magic link/OTP fallback; Facebook is intentionally out of v1.
+- Billing/credits v1 is now locked in `docs/BILLING-CREDITS-ENTITLEMENT-v1.md`: the product ladder is Free / Plus / Premium / Concierge, subscriptions are the trust-building base, credits are reserved for expensive/bursty add-ons, and `supabase/sql/006_billing_credits_foundation.sql` adds the first credit wallet and entitlement policy tables.
 - Production API contracts are partially represented in `engine/server.py`.
 - Admin and analytics are not built yet, but their data model must be planned now.
 
@@ -171,6 +172,10 @@ Missing:
 | `/entitlements` | GET | Current plan and feature gates | required | `subscription_ledger`, `usage_ledger` |
 | `/subscription-event` | POST | StoreKit / App Store Server Notifications / RevenueCat webhook | server only | verified signed event |
 | `/purchase-restore` | POST | Reconcile client restore result with backend | required | App Store Server API |
+| `/credits/balance` | POST | Return wallet balances for safe UI display | required | `credit_wallets`, `credit_ledger` |
+| `/credits/consume` | POST | Consume credits for costly Avatar/add-on features | backend/internal | `credit_transactions`, `credit_ledger` |
+| `/credits/grant` | POST | Grant included, purchased, promo, B2B, or admin credits | webhook/admin only | `credit_transactions`, `credit_wallets`, `audit_events` |
+| `/credits/refund-reversal` | POST | Reverse credits after refund/revoke events | webhook/admin only | `credit_transactions`, `credit_ledger`, `audit_events` |
 
 Prototype coverage:
 
@@ -181,6 +186,8 @@ Production rule:
 
 - Client purchase state is a signal, not authority.
 - Entitlements change only after server verification.
+- Basic companionship, routine reminders, privacy controls, and safety/referral flows must not depend on purchased credits.
+- Expensive Avatar/GPU add-ons should consume included monthly allowance first, then purchased credits, then degrade gracefully to lower-cost mode.
 
 ### Data Rights And Trust
 
@@ -269,6 +276,15 @@ Companion persona layer foundation added in `supabase/sql/005_companion_persona_
 
 These tables separate product-owned persona templates from user-owned relationship state. This keeps the six characters durable while allowing a specific user and companion to grow a shared style over time.
 
+Billing credits foundation added in `supabase/sql/006_billing_credits_foundation.sql`:
+
+- `entitlement_policy_versions`
+- `credit_wallets`
+- `credit_transactions`
+- `credit_ledger`
+
+These tables keep paid access backend-authoritative while allowing Munea to support App Store subscriptions, RevenueCat or StoreKit provider events, monthly included credits, purchased credits, refund/reversal handling, idempotency, and admin audit trails. Credits are a cost-control and add-on mechanism, not the identity of the core companion product.
+
 ## RLS And Permission Matrix
 
 | Data | User access | Family access | Admin access |
@@ -281,6 +297,7 @@ These tables separate product-owned persona templates from user-owned relationsh
 | conversation summaries | account scoped | limited summary later | admin backend only |
 | safety events | account scoped | family notification scoped | admin backend only |
 | subscription ledger | account owner/admin in app | no direct family edit | admin backend only |
+| credit wallets/ledger | account owner/admin in app | no direct family edit unless payer role is added | admin backend only |
 | privacy requests | account owner | no family deletion unless owner | admin backend only |
 | audit events | no normal write | no normal write | admin backend only |
 
@@ -394,7 +411,7 @@ MVP modules:
 1. North Star dashboard.
 2. Account and family lookup.
 3. Subscription and entitlement lookup.
-4. Voice/avatar usage and cost.
+4. Credits wallet, usage, Avatar cost, and provider event lookup.
 5. Privacy requests.
 6. Safety events.
 7. Audit events.

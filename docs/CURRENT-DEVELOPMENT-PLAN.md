@@ -33,6 +33,13 @@
 - Added a manual `/persona/context` refresh so developers can inspect persona + relationship state without storing raw transcript analytics.
 - Verified that normal mode hides the panel and `?debug=ai` shows it in Settings.
 
+## 2026-07-01 Update
+
+- Locked the subscription ladder as Free / Plus / Premium / Concierge.
+- Added `docs/BILLING-CREDITS-ENTITLEMENT-v1.md` as the source of truth for plan names, entitlement gates, credits direction, deduction order, service architecture, prior-plan review, and future product ids.
+- Added `supabase/sql/006_billing_credits_foundation.sql` for `entitlement_policy_versions`, `credit_wallets`, `credit_transactions`, and `credit_ledger`.
+- Clarified that subscriptions should protect the trust-building base experience, while credits should only apply to expensive or bursty add-ons such as premium Avatar/GPU minutes.
+
 ## 2026-06-29 Update
 
 - Added the first mobile microphone bridge path.
@@ -256,6 +263,7 @@ Goal: make the product safe enough to move toward TestFlight and paid subscripti
 Work items:
 - [x] Add `/entitlements` as backend source of truth for paid feature gates.
 - [x] Add `/subscription-event` placeholder for StoreKit / App Store Server Notifications / RevenueCat webhook flow.
+- [x] Lock Free / Plus / Premium / Concierge as the v1 subscription ladder.
 - [x] Add `/healthz` service contract check.
 - [x] Add request-size, audio MIME, audio-size, and safe API error guardrails.
 - [x] Add `/privacy-export` and `/account-deletion` contracts for App Store account/data rights readiness.

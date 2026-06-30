@@ -1,5 +1,15 @@
 # 沐寧 Munea · STATUS（接力檔）
 
+## 2026-07-01 Update - Billing tier naming
+
+**Status:** product naming decision locked.
+
+- Subscription ladder: `Free / Plus / Premium / Concierge`.
+- Added `docs/BILLING-CREDITS-ENTITLEMENT-v1.md` as the billing, credits, and entitlement source of truth, including prior-plan review and the current service architecture.
+- Added `supabase/sql/006_billing_credits_foundation.sql` for entitlement policy versions, credit wallets, credit transactions, and credit ledger.
+- Credits remain reserved for expensive/bursty add-ons such as premium Avatar/GPU minutes; basic companionship should not feel metered.
+- Current implementation still uses backend entitlements + usage ledger; full credits wallet remains future work.
+
 ## 2026-06-30 Update - Relationship state readback
 
 **Status:** completed for local/backend contract.

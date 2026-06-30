@@ -723,6 +723,7 @@ seed = Path("supabase/sql/002_demo_bootstrap.sql").read_text(encoding="utf-8").l
 analytics = Path("supabase/sql/003_analytics_admin_foundation.sql").read_text(encoding="utf-8").lower()
 ai_memory = Path("supabase/sql/004_ai_memory_service_foundation.sql").read_text(encoding="utf-8").lower()
 persona_layer = Path("supabase/sql/005_companion_persona_layer.sql").read_text(encoding="utf-8").lower()
+billing_credits = Path("supabase/sql/006_billing_credits_foundation.sql").read_text(encoding="utf-8").lower()
 env_example = Path("docs/supabase/munea-env.example.txt").read_text(encoding="utf-8")
 required_tables = [
     "accounts",
@@ -818,9 +819,32 @@ for table in persona_tables:
 for token in ["nening-real-female", "companion-real-male", "munea-2d-xiaoyun", "munea-2d-ayuan", "munea-2d-mimi", "munea-2d-wangcai"]:
     if token not in persona_layer:
         raise SystemExit("Missing persona template seed: " + token)
+billing_credit_tables = [
+    "entitlement_policy_versions",
+    "credit_wallets",
+    "credit_transactions",
+    "credit_ledger",
+]
+for table in billing_credit_tables:
+    if f"create table if not exists public.{table}" not in billing_credits:
+        raise SystemExit("Missing billing credits table: " + table)
+    if f"alter table public.{table} enable row level security" not in billing_credits:
+        raise SystemExit("Missing billing credits RLS: " + table)
+    if f"revoke all on public.{table} from anon" not in billing_credits:
+        raise SystemExit("Missing billing credits anon revoke: " + table)
+for token in [
+    "array['free', 'plus', 'premium', 'concierge']",
+    "included_monthly",
+    "purchased",
+    "idempotency_key",
+    "munea_app_store_v1",
+    "refund_reversal",
+]:
+    if token not in billing_credits:
+        raise SystemExit("Missing billing credits schema token: " + token)
 if "weekly meaningful companion days" not in Path("docs/BACKEND-ARCHITECTURE-v1.md").read_text(encoding="utf-8").lower():
     raise SystemExit("Backend architecture missing North Star definition")
-print("supabase tables", len(required_tables) + len(analytics_tables) + len(ai_memory_tables) + len(persona_tables))
+print("supabase tables", len(required_tables) + len(analytics_tables) + len(ai_memory_tables) + len(persona_tables) + len(billing_credit_tables))
 '@ | python -
 Pass "Supabase schema, analytics foundation, RLS, grants, and seed ids are present"
 
@@ -899,6 +923,54 @@ for token in ["sign in with apple", "google", "email magic link/otp", "facebook"
 print("auth onboarding contract OK")
 '@ | python -
 Pass "Auth onboarding architecture is documented"
+
+Step "Billing credits entitlement document contract"
+@'
+from pathlib import Path
+
+doc = Path("docs/BILLING-CREDITS-ENTITLEMENT-v1.md").read_text(encoding="utf-8").lower()
+readme = Path("README.md").read_text(encoding="utf-8").lower()
+app_store = Path("docs/APP-STORE-PRODUCTION-READINESS.md").read_text(encoding="utf-8").lower()
+current_plan = Path("docs/CURRENT-DEVELOPMENT-PLAN.md").read_text(encoding="utf-8").lower()
+required = [
+    "free -> plus -> premium -> concierge",
+    "munea free",
+    "munea plus",
+    "munea premium",
+    "munea concierge",
+    "previous planning review",
+    "subscription = trust-building base access",
+    "service architecture",
+    "credits",
+    "entitlement",
+    "deduction order",
+    "credit_wallets",
+    "credit_ledger",
+    "credit_transactions",
+    "entitlement_policy_versions",
+    "munea.concierge.monthly",
+    "006_billing_credits_foundation.sql",
+]
+missing = [token for token in required if token not in doc]
+if missing:
+    raise SystemExit("Billing credits entitlement doc missing: " + ", ".join(missing))
+for token in ["free / plus / premium / concierge", "billing-credits-entitlement-v1.md"]:
+    if token not in readme:
+        raise SystemExit("README missing billing plan pointer: " + token)
+    if token not in current_plan:
+        raise SystemExit("Current development plan missing billing plan pointer: " + token)
+for token in ["free -> plus -> premium -> concierge", "billing-credits-entitlement-v1.md"]:
+    if token not in app_store:
+        raise SystemExit("App Store readiness missing billing plan pointer: " + token)
+for token in ["006_billing_credits_foundation.sql", "subscription = base access and trust", "credits = expensive or bursty premium capacity"]:
+    if token not in app_store:
+        raise SystemExit("App Store readiness missing billing credits architecture: " + token)
+for token in ["006_billing_credits_foundation.sql", "credit_wallets", "credit_transactions", "idempotent"]:
+    if token not in Path("docs/supabase/SETUP.md").read_text(encoding="utf-8").lower():
+        raise SystemExit("Supabase setup missing billing credits setup token: " + token)
+print("billing credits entitlement OK")
+'@ | python -
+Pass "Billing credits entitlement ladder is documented"
 
 Step "AI service design document contract"
 @'

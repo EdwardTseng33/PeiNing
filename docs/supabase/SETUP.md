@@ -1,6 +1,6 @@
 # Munea Supabase Setup
 
-Updated: 2026-06-30
+Updated: 2026-07-01
 
 This folder documents the first production database path for Munea.
 
@@ -13,6 +13,7 @@ Current status:
 - Repo now contains analytics/admin foundation SQL at `supabase/sql/003_analytics_admin_foundation.sql`.
 - Repo now contains AI memory/service foundation SQL at `supabase/sql/004_ai_memory_service_foundation.sql`.
 - Repo now contains companion persona layer foundation SQL at `supabase/sql/005_companion_persona_layer.sql`.
+- Repo now contains billing credits foundation SQL at `supabase/sql/006_billing_credits_foundation.sql`.
 - The SQL bootstrap has been tested through the dashboard SQL Editor flow.
 - Supabase CLI is not installed in this Windows environment yet, so this is a SQL Editor-ready schema, not an official migration history entry.
 - The backend can now load `engine/.env.local` directly, and `npm run supabase:doctor` can validate local Supabase wiring without printing secrets.
@@ -91,6 +92,14 @@ supabase/sql/005_companion_persona_layer.sql
 
 This adds `companion_persona_templates` and `companion_relationship_states`. Persona templates keep the six characters as product-owned structured config, while relationship state lets a specific user and selected companion grow a shared style over time.
 
+Then run the billing credits foundation:
+
+```text
+supabase/sql/006_billing_credits_foundation.sql
+```
+
+This adds `entitlement_policy_versions`, `credit_wallets`, `credit_transactions`, and `credit_ledger`. The v1 plan ladder is Free / Plus / Premium / Concierge. Subscriptions remain the base access model; credits are reserved for expensive or bursty add-ons such as premium Avatar/GPU minutes, and every mutation must be server-side and idempotent.
+
 This creates the first Admin/North Star analytics tables:
 
 - `product_events`
@@ -141,6 +150,7 @@ Important:
 - Do not expose `service_role` to the app.
 - Do not grant `anon` access to user data tables.
 - Subscription and usage ledger writes should be server-side only.
+- Credit wallet writes should be server-side only.
 - Data export and account deletion jobs should be server-side only.
 
 ## Bootstrap Note
