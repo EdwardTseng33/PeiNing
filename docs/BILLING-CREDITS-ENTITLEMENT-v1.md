@@ -52,7 +52,10 @@ Implemented now:
 - `usage_ledger` stores monthly usage by metric.
 - `cost_ledger` stores provider/service cost observations for analytics/admin.
 - `POST /avatar-session` gates premium Avatar modes and records premium Avatar minutes.
+- `POST /credits/balance`, `POST /credits/grant`, and `POST /credits/consume` define the local prototype runtime contract for wallet balance, idempotent grants, and graceful insufficient-credit fallback.
+- `/avatar-session` now checks credits when premium Avatar monthly allowance is exhausted and consumes overage credits only on completed premium sessions.
 - Local fallback uses `engine/billing_store.json`.
+- Local credits fallback uses `engine/credits_store.json`.
 
 Added as schema foundation:
 
@@ -68,7 +71,7 @@ Not implemented yet:
 - RevenueCat / StoreKit SDK integration.
 - Signed App Store Server API or RevenueCat webhook verification.
 - Restore purchases UX.
-- Runtime credit deduction API.
+- Supabase adapter for runtime credits.
 - Refund/revoke handling for credits.
 - Admin console screens for manual adjustment.
 
@@ -158,6 +161,14 @@ When a paid feature has usage cost:
 6. If no allowance/credits remain, degrade gracefully.
 7. For Avatar, degrade to `2d-viseme`, static face, or voice-only instead of ending the conversation.
 
+Prototype Avatar conversion rule:
+
+```text
+1 MUNEA_CREDIT = 1 premium Avatar minute
+```
+
+This is a placeholder for engineering validation. Final credit-to-minute conversion must be recalibrated after Ditto/LiveAvatar cost tests and App Store price decisions.
+
 No raw transcript text should be stored as part of billing or credit events.
 
 ## Backend Source Of Truth
@@ -221,15 +232,15 @@ Current:
 - `POST /entitlements`
 - `POST /subscription-event`
 - `POST /avatar-session`
+- `POST /credits/balance`
+- `POST /credits/grant`
+- `POST /credits/consume`
 
 Next production APIs:
 
 | Endpoint | Purpose | Auth |
 |---|---|---|
 | `POST /purchase-restore` | reconcile restored App Store purchase with backend | required |
-| `POST /credits/balance` | return wallet balance and safe display summary | required |
-| `POST /credits/consume` | server-side credit consumption for costly features | backend/internal |
-| `POST /credits/grant` | grant included, promo, or purchased credits | webhook/admin only |
 | `POST /credits/refund-reversal` | reverse credits after refund/revoke events | webhook/admin only |
 
 All credit mutations should be server-side only and audit logged.
@@ -269,10 +280,11 @@ Recommended Admin modules:
 1. Lock plan names and entitlement policy. Done.
 2. Add credits schema foundation. Done as `006_billing_credits_foundation.sql`.
 3. Keep `/entitlements` backend-authoritative. Done for prototype.
-4. Implement StoreKit 2 or RevenueCat purchase/restore in Capacitor iOS.
-5. Add signed provider event verification and idempotency.
-6. Add credit wallet runtime API only when premium Avatar/expensive add-ons are ready.
-7. Add Admin MVP views before public App Store launch.
+4. Add local credit wallet runtime API. Done for prototype.
+5. Connect premium Avatar overage to credits. Done for prototype.
+6. Implement StoreKit 2 or RevenueCat purchase/restore in Capacitor iOS.
+7. Add signed provider event verification and Supabase-backed idempotency.
+8. Add Admin MVP views before public App Store launch.
 
 ## Open Decisions
 

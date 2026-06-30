@@ -31,6 +31,7 @@ DEFAULT_CHAR = "寧寧"
 COMPANION_PROFILE_PATH = os.environ.get("MUNEA_COMPANION_PROFILE_PATH") or os.path.join(HERE, "companion_profile.json")
 APP_PROFILE_STORE_PATH = os.environ.get("MUNEA_APP_PROFILE_STORE_PATH") or os.path.join(HERE, "app_profile_store.json")
 BILLING_STORE_PATH = os.environ.get("MUNEA_BILLING_STORE_PATH") or os.path.join(HERE, "billing_store.json")
+CREDITS_STORE_PATH = os.environ.get("MUNEA_CREDITS_STORE_PATH") or os.path.join(HERE, "credits_store.json")
 PRIVACY_REQUESTS_PATH = os.environ.get("MUNEA_PRIVACY_REQUESTS_PATH") or os.path.join(HERE, "privacy_requests.json")
 PRODUCT_EVENTS_PATH = os.environ.get("MUNEA_PRODUCT_EVENTS_PATH") or os.path.join(HERE, "product_events.json")
 MEMORY_ITEMS_PATH = os.environ.get("MUNEA_MEMORY_ITEMS_PATH") or os.path.join(HERE, "memory_items.json")
@@ -1126,6 +1127,261 @@ def default_billing_store():
     }
 
 
+def default_credits_store():
+    return {
+        "schemaVersion": 1,
+        "accountId": "local-demo-account",
+        "personId": PRIMARY_CARE_RECIPIENT_ID,
+        "currencyCode": "MUNEA_CREDIT",
+        "wallets": [
+            {
+                "id": "wallet_included_monthly",
+                "type": "included_monthly",
+                "period": time.strftime("%Y-%m"),
+                "balance": 0,
+                "expiresAt": None,
+                "status": "active",
+            },
+            {
+                "id": "wallet_purchased",
+                "type": "purchased",
+                "period": None,
+                "balance": 0,
+                "expiresAt": None,
+                "status": "active",
+            },
+        ],
+        "transactions": [],
+        "ledger": [],
+        "updatedAt": utc_now(),
+    }
+
+
+def normalize_credit_amount(value):
+    try:
+        amount = round(float(value or 0), 4)
+    except Exception:
+        amount = 0
+    return max(0, min(amount, 1_000_000))
+
+
+def normalize_credit_wallet(data=None, wallet_type="purchased", period=None):
+    data = data or {}
+    wallet_type = data.get("type") or data.get("walletType") or data.get("wallet_type") or wallet_type
+    wallet_type = wallet_type if wallet_type in ("included_monthly", "purchased") else "purchased"
+    if wallet_type == "included_monthly":
+        period = data.get("period") or period or time.strftime("%Y-%m")
+    else:
+        period = data.get("period")
+    wallet_id = data.get("id") or f"wallet_{wallet_type}" + (f"_{period}" if period else "")
+    return {
+        "id": str(wallet_id)[:80],
+        "type": wallet_type,
+        "period": period,
+        "balance": normalize_credit_amount(data.get("balance")),
+        "expiresAt": data.get("expiresAt") or data.get("expires_at"),
+        "status": str(data.get("status") or "active"),
+    }
+
+
+def normalize_credits_store(data=None):
+    base = default_credits_store()
+    data = data or {}
+    wallets = [normalize_credit_wallet(w) for w in data.get("wallets", []) if isinstance(w, dict)]
+    wallet_keys = {(w["type"], w.get("period")) for w in wallets}
+    for wallet in base["wallets"]:
+        key = (wallet["type"], wallet.get("period"))
+        if key not in wallet_keys and wallet["type"] not in {w["type"] for w in wallets if w["type"] == "purchased"}:
+            wallets.append(wallet)
+    if not any(w["type"] == "included_monthly" for w in wallets):
+        wallets.append(base["wallets"][0])
+    if not any(w["type"] == "purchased" for w in wallets):
+        wallets.append(base["wallets"][1])
+    return {
+        "schemaVersion": int(data.get("schemaVersion") or data.get("schema_version") or 1),
+        "accountId": str(data.get("accountId") or data.get("account_id") or base["accountId"]),
+        "personId": str(data.get("personId") or data.get("person_id") or base["personId"]),
+        "currencyCode": str(data.get("currencyCode") or data.get("currency_code") or base["currencyCode"]),
+        "wallets": wallets,
+        "transactions": list(data.get("transactions") or [])[-500:],
+        "ledger": list(data.get("ledger") or [])[-500:],
+        "updatedAt": data.get("updatedAt") or data.get("updated_at") or utc_now(),
+    }
+
+
+def load_credits_store():
+    return normalize_credits_store(read_json_file(CREDITS_STORE_PATH, {}))
+
+
+def save_credits_store(data):
+    store = normalize_credits_store({**(data or {}), "updatedAt": utc_now()})
+    write_json_file(CREDITS_STORE_PATH, store)
+    return store
+
+
+def credit_wallet_summary(store):
+    wallets = store.get("wallets") or []
+    included = sum(float(w.get("balance") or 0) for w in wallets if w.get("type") == "included_monthly" and w.get("status") == "active")
+    purchased = sum(float(w.get("balance") or 0) for w in wallets if w.get("type") == "purchased" and w.get("status") == "active")
+    return {
+        "includedMonthly": round(included, 4),
+        "purchased": round(purchased, 4),
+        "total": round(included + purchased, 4),
+        "currencyCode": store.get("currencyCode") or "MUNEA_CREDIT",
+    }
+
+
+def find_credit_wallet(store, wallet_type):
+    wallets = store.setdefault("wallets", [])
+    for wallet in wallets:
+        if wallet.get("type") == wallet_type and wallet.get("status") == "active":
+            return wallet
+    wallet = normalize_credit_wallet({"type": wallet_type}, wallet_type=wallet_type)
+    wallets.append(wallet)
+    return wallet
+
+
+def credit_idempotency_response(store, key):
+    if not key:
+        return None
+    matches = [
+        tx for tx in store.get("transactions", [])
+        if tx.get("idempotencyKey") == key or str(tx.get("idempotencyKey") or "").startswith(key + ":")
+    ]
+    if matches:
+            return {
+                "ok": True,
+                "idempotentReplay": True,
+                "transactions": matches,
+                "transaction": matches[0],
+                "walletSummary": credit_wallet_summary(store),
+                "credits": store,
+            }
+    return None
+
+
+def append_credit_transaction(store, *, transaction_type, wallet, amount, source, reason, idempotency_key, feature=None, provider=None, provider_transaction_id=None):
+    tx = {
+        "id": f"credit_tx_{int(time.time() * 1000)}_{len(store.get('transactions', [])) + 1}",
+        "type": transaction_type,
+        "walletId": wallet.get("id"),
+        "walletType": wallet.get("type"),
+        "amount": round(float(amount or 0), 4),
+        "balanceAfter": round(float(wallet.get("balance") or 0), 4),
+        "source": str(source or "system")[:40],
+        "reason": str(reason or transaction_type)[:120],
+        "feature": str(feature or "")[:80] or None,
+        "provider": str(provider or "")[:40] or None,
+        "providerTransactionId": str(provider_transaction_id or "")[:120] or None,
+        "idempotencyKey": str(idempotency_key or tx_fallback_idempotency_key(transaction_type, wallet, amount))[:160],
+        "createdAt": utc_now(),
+    }
+    store.setdefault("transactions", []).append(tx)
+    store.setdefault("ledger", []).append({
+        "id": f"credit_ledger_{int(time.time() * 1000)}_{len(store.get('ledger', [])) + 1}",
+        "eventType": f"credits_{transaction_type}",
+        "walletId": wallet.get("id"),
+        "amount": tx["amount"],
+        "balanceAfter": tx["balanceAfter"],
+        "feature": tx["feature"],
+        "sourceRef": tx["id"],
+        "createdAt": tx["createdAt"],
+    })
+    return tx
+
+
+def tx_fallback_idempotency_key(transaction_type, wallet, amount):
+    return f"local-{transaction_type}-{wallet.get('id')}-{amount}-{int(time.time() * 1000)}"
+
+
+def credits_balance_response(data=None):
+    store = load_credits_store()
+    return {
+        "ok": True,
+        "walletSummary": credit_wallet_summary(store),
+        "wallets": store.get("wallets", []),
+        "recentTransactions": list(store.get("transactions", []))[-20:],
+        "backend": data_backend_status(),
+    }
+
+
+def credits_grant_response(data):
+    store = load_credits_store()
+    amount = normalize_credit_amount(data.get("amount") or data.get("credits"))
+    if amount <= 0:
+        return {"ok": False, "error": {"code": "invalid_credit_amount"}}
+    wallet_type = data.get("walletType") or data.get("wallet_type") or ("included_monthly" if data.get("source") == "included_monthly" else "purchased")
+    wallet_type = wallet_type if wallet_type in ("included_monthly", "purchased") else "purchased"
+    source = data.get("source") or ("included_monthly" if wallet_type == "included_monthly" else "promo")
+    idempotency_key = data.get("idempotencyKey") or data.get("idempotency_key")
+    replay = credit_idempotency_response(store, idempotency_key)
+    if replay:
+        return replay
+    wallet = find_credit_wallet(store, wallet_type)
+    wallet["balance"] = round(float(wallet.get("balance") or 0) + amount, 4)
+    tx = append_credit_transaction(
+        store,
+        transaction_type="grant",
+        wallet=wallet,
+        amount=amount,
+        source=source,
+        reason=data.get("reason") or "credit_grant",
+        idempotency_key=idempotency_key,
+        provider=data.get("provider"),
+        provider_transaction_id=data.get("providerTransactionId") or data.get("provider_transaction_id"),
+    )
+    store = save_credits_store(store)
+    return {"ok": True, "transaction": tx, "walletSummary": credit_wallet_summary(store), "credits": store}
+
+
+def credits_consume_response(data):
+    store = load_credits_store()
+    amount = normalize_credit_amount(data.get("amount") or data.get("credits"))
+    if amount <= 0:
+        return {"ok": False, "error": {"code": "invalid_credit_amount"}}
+    idempotency_key = data.get("idempotencyKey") or data.get("idempotency_key")
+    replay = credit_idempotency_response(store, idempotency_key)
+    if replay:
+        return replay
+    summary = credit_wallet_summary(store)
+    if summary["total"] < amount:
+        return {
+            "ok": False,
+            "error": {"code": "insufficient_credits"},
+            "walletSummary": summary,
+            "shortfall": round(amount - summary["total"], 4),
+            "fallbackMode": data.get("fallbackMode") or "2d-viseme",
+        }
+    remaining = amount
+    consumed = []
+    for wallet_type in ("included_monthly", "purchased"):
+        wallet = find_credit_wallet(store, wallet_type)
+        available = float(wallet.get("balance") or 0)
+        if available <= 0:
+            continue
+        take = min(available, remaining)
+        wallet["balance"] = round(available - take, 4)
+        remaining = round(remaining - take, 4)
+        consumed.append((wallet, take))
+        if remaining <= 0:
+            break
+    transactions = [
+        append_credit_transaction(
+            store,
+            transaction_type="consume",
+            wallet=wallet,
+            amount=take,
+            source=data.get("source") or "system",
+            reason=data.get("reason") or "credit_consume",
+            idempotency_key=(idempotency_key + f":{idx}") if idempotency_key else None,
+            feature=data.get("feature"),
+        )
+        for idx, (wallet, take) in enumerate(consumed)
+    ]
+    store = save_credits_store(store)
+    return {"ok": True, "transactions": transactions, "walletSummary": credit_wallet_summary(store), "credits": store}
+
+
 def normalize_billing_store(data=None):
     base = default_billing_store()
     data = data or {}
@@ -1227,6 +1483,9 @@ def avatar_session_response(data):
     premium_grant = float(entitlements.get("premiumAvatarMinutesMonthly") or 0)
     premium_used = float(usage.get("avatarMinutesUsed") or 0)
     premium_allowed = bool(entitlements.get("realtimeAvatar"))
+    included_remaining = max(0, round(premium_grant - premium_used, 4))
+    credits_required = 0
+    credits_consumed = None
     selected_mode = requested_mode
     fallback_reason = None
 
@@ -1234,20 +1493,35 @@ def avatar_session_response(data):
         if not premium_allowed:
             selected_mode = "2d-viseme"
             fallback_reason = "premium_avatar_not_entitled"
-        elif premium_grant <= 0:
-            selected_mode = "2d-viseme"
-            fallback_reason = "premium_avatar_no_monthly_grant"
-        elif premium_used + duration_minutes > premium_grant:
-            selected_mode = "2d-viseme"
-            fallback_reason = "premium_avatar_minutes_exhausted"
+        elif duration_minutes > 0:
+            credits_required = max(0, round(duration_minutes - included_remaining, 4))
+            if credits_required > 0:
+                credit_summary = credit_wallet_summary(load_credits_store())
+                if credit_summary["total"] < credits_required:
+                    selected_mode = "2d-viseme"
+                    fallback_reason = "premium_avatar_minutes_and_credits_exhausted"
 
     usage_committed = False
     if action in ("complete", "record-usage", "record_usage") and selected_mode in PREMIUM_AVATAR_MODES and duration_minutes > 0:
-        usage["avatarMinutesUsed"] = round(premium_used + duration_minutes, 2)
-        billing["usageLedger"] = usage
-        billing = save_billing_store(billing)
-        usage = billing["usageLedger"]
-        usage_committed = True
+        if credits_required > 0:
+            credits_consumed = credits_consume_response({
+                "amount": credits_required,
+                "feature": "premium_avatar",
+                "reason": "premium_avatar_overage",
+                "fallbackMode": "2d-viseme",
+                "idempotencyKey": data.get("creditIdempotencyKey") or data.get("idempotencyKey") or data.get("sessionId"),
+            })
+            if not credits_consumed.get("ok"):
+                selected_mode = "2d-viseme"
+                fallback_reason = "premium_avatar_credit_consume_failed"
+        if selected_mode not in PREMIUM_AVATAR_MODES:
+            duration_minutes = 0
+        else:
+            usage["avatarMinutesUsed"] = round(premium_used + duration_minutes, 2)
+            billing["usageLedger"] = usage
+            billing = save_billing_store(billing)
+            usage = billing["usageLedger"]
+            usage_committed = True
 
     provider = "local-browser"
     if selected_mode == "ditto":
@@ -1266,6 +1540,9 @@ def avatar_session_response(data):
             "fallbackReason": fallback_reason,
             "estimatedMinutes": duration_minutes,
             "usageCommitted": usage_committed,
+            "includedMinutesRemainingBeforeSession": included_remaining,
+            "creditsRequired": credits_required if selected_mode in PREMIUM_AVATAR_MODES else 0,
+            "creditsConsumed": credits_consumed,
             "startedAt": utc_now(),
         },
         "entitlements": entitlements,
@@ -1636,7 +1913,7 @@ class H(BaseHTTPRequestHandler):
                 "ok": True,
                 "service": "munea-local-engine",
                 "time": utc_now(),
-                "contracts": ["auth-status", "account-bootstrap", "app-profile", "companion-profile", "persona-context", "entitlements", "voice-session", "avatar-session", "ai-brain-status", "memory-extract", "memory-retrieve", "butler-post-turn", "guardian-evaluate", "perception-topic-plan", "perception-snapshot", "product-event", "admin-north-star", "privacy-export", "account-deletion"],
+                "contracts": ["auth-status", "account-bootstrap", "app-profile", "companion-profile", "persona-context", "entitlements", "credits-balance", "credits-grant", "credits-consume", "voice-session", "avatar-session", "ai-brain-status", "memory-extract", "memory-retrieve", "butler-post-turn", "guardian-evaluate", "perception-topic-plan", "perception-snapshot", "product-event", "admin-north-star", "privacy-export", "account-deletion"],
                 "backend": data_backend_status(),
             })
             return
@@ -1701,6 +1978,12 @@ class H(BaseHTTPRequestHandler):
                 self._json(entitlements_response(data))
             elif self.path == "/subscription-event":
                 self._json(subscription_event_response(data))
+            elif self.path == "/credits/balance":
+                self._json(credits_balance_response(data))
+            elif self.path == "/credits/grant":
+                self._json(credits_grant_response(data))
+            elif self.path == "/credits/consume":
+                self._json(credits_consume_response(data))
             elif self.path == "/privacy-export":
                 self._json(privacy_export_response(data))
             elif self.path == "/account-deletion":

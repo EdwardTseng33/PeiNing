@@ -28,7 +28,7 @@ Pass "Python files compile"
 Step "JSON parse"
 @'
 import json, pathlib
-for p in ["engine/characters.json", "engine/user_profile.json", "engine/companion_profile.json", "engine/app_profile_store.json", "engine/billing_store.json", "engine/privacy_requests.json", "engine/memory_items.json", "engine/perception_snapshots.json", "engine/companion_relationship_states.json"]:
+for p in ["engine/characters.json", "engine/user_profile.json", "engine/companion_profile.json", "engine/app_profile_store.json", "engine/billing_store.json", "engine/credits_store.json", "engine/privacy_requests.json", "engine/memory_items.json", "engine/perception_snapshots.json", "engine/companion_relationship_states.json"]:
     json.loads(pathlib.Path(p).read_text(encoding="utf-8"))
     print(f"{p} OK")
 '@ | python -
@@ -665,7 +665,8 @@ Pass "Environment loader and Supabase doctor are safe"
 
 Step "Billing and entitlement contract"
 @'
-import os, sys
+import os, sys, tempfile
+from pathlib import Path
 os.environ.setdefault("GEMINI_API_KEY", "smoke-test-key")
 sys.path.insert(0, "engine")
 import server
@@ -708,8 +709,102 @@ premium = server.avatar_session_response({"action": "complete", "mode": "ditto",
 assert premium["session"]["selectedMode"] == "ditto"
 assert premium["session"]["usageCommitted"] is True
 assert premium["usageLedger"]["avatarMinutesUsed"] == 12
+with tempfile.TemporaryDirectory() as d:
+    original_credits_path = server.CREDITS_STORE_PATH
+    server.CREDITS_STORE_PATH = str(Path(d) / "credits_store.json")
+    premium_store.update(server.normalize_billing_store({
+        "activePlan": "premium",
+        "subscription": {"status": "active", "productId": "munea.premium.monthly"},
+        "entitlements": {"realtimeAvatar": True, "premiumAvatarMinutesMonthly": 120},
+        "usageLedger": {"period": "2026-06", "avatarMinutesUsed": 119},
+    }))
+    grant_avatar_credits = server.credits_grant_response({
+        "amount": 3,
+        "walletType": "purchased",
+        "source": "promo",
+        "idempotencyKey": "smoke-avatar-credit-grant",
+    })
+    assert grant_avatar_credits["ok"] is True
+    overage = server.avatar_session_response({
+        "action": "complete",
+        "mode": "ditto",
+        "durationMs": 120000,
+        "sessionId": "smoke-avatar-overage-session",
+    })
+    assert overage["session"]["selectedMode"] == "ditto"
+    assert overage["session"]["usageCommitted"] is True
+    assert overage["session"]["creditsRequired"] == 1
+    assert overage["session"]["creditsConsumed"]["ok"] is True
+    assert overage["session"]["creditsConsumed"]["walletSummary"]["purchased"] == 2
+    assert overage["usageLedger"]["avatarMinutesUsed"] == 121
+    server.CREDITS_STORE_PATH = original_credits_path
 server.load_billing_store = original_load
 server.save_billing_store = original_save
+
+with tempfile.TemporaryDirectory() as d:
+    original_credits_path = server.CREDITS_STORE_PATH
+    server.CREDITS_STORE_PATH = str(Path(d) / "credits_store.json")
+    balance = server.credits_balance_response({})
+    assert balance["ok"] is True
+    assert balance["walletSummary"]["total"] == 0
+
+    grant_included = server.credits_grant_response({
+        "amount": 10,
+        "walletType": "included_monthly",
+        "source": "included_monthly",
+        "reason": "smoke included grant",
+        "idempotencyKey": "smoke-grant-included-1",
+    })
+    assert grant_included["ok"] is True
+    assert grant_included["walletSummary"]["includedMonthly"] == 10
+
+    grant_purchased = server.credits_grant_response({
+        "amount": 5,
+        "walletType": "purchased",
+        "source": "promo",
+        "reason": "smoke purchased grant",
+        "idempotencyKey": "smoke-grant-purchased-1",
+    })
+    assert grant_purchased["ok"] is True
+    assert grant_purchased["walletSummary"]["total"] == 15
+    replay = server.credits_grant_response({
+        "amount": 5,
+        "walletType": "purchased",
+        "source": "promo",
+        "idempotencyKey": "smoke-grant-purchased-1",
+    })
+    assert replay["ok"] is True
+    assert replay["idempotentReplay"] is True
+    assert replay["walletSummary"]["total"] == 15
+
+    consume = server.credits_consume_response({
+        "amount": 12,
+        "feature": "premium_avatar",
+        "reason": "smoke avatar consume",
+        "idempotencyKey": "smoke-consume-avatar-1",
+    })
+    assert consume["ok"] is True
+    assert consume["walletSummary"]["includedMonthly"] == 0
+    assert consume["walletSummary"]["purchased"] == 3
+    consume_replay = server.credits_consume_response({
+        "amount": 12,
+        "feature": "premium_avatar",
+        "idempotencyKey": "smoke-consume-avatar-1",
+    })
+    assert consume_replay["ok"] is True
+    assert consume_replay["idempotentReplay"] is True
+    assert consume_replay["walletSummary"]["purchased"] == 3
+
+    insufficient = server.credits_consume_response({
+        "amount": 99,
+        "feature": "premium_avatar",
+        "fallbackMode": "2d-viseme",
+        "idempotencyKey": "smoke-consume-avatar-too-much",
+    })
+    assert insufficient["ok"] is False
+    assert insufficient["error"]["code"] == "insufficient_credits"
+    assert insufficient["fallbackMode"] == "2d-viseme"
+    server.CREDITS_STORE_PATH = original_credits_path
 print("billing plan", normalized["activePlan"])
 '@ | python -
 Pass "Billing entitlements and avatar session gates normalize correctly"
@@ -1388,12 +1483,27 @@ if (-not $entitlements.entitlements.voiceCompanion) { throw "/entitlements missi
 if (-not $entitlements.billing.serverVerificationRequired) { throw "/entitlements should require server verification" }
 Pass "/entitlements returns subscription gates"
 
+Step "API /credits"
+$creditsBalance = Invoke-RestMethod -Uri "$BaseUrl/credits/balance" -Method Post -ContentType "application/json; charset=utf-8" -Body '{}' -TimeoutSec 30
+if (-not $creditsBalance.ok) { throw "/credits/balance returned not ok" }
+if (-not $creditsBalance.walletSummary.currencyCode) { throw "/credits/balance missing currency" }
+$creditGrantBody = '{"amount":1,"walletType":"included_monthly","source":"included_monthly","reason":"api smoke grant","idempotencyKey":"api-smoke-grant-1"}'
+$creditGrant = Invoke-RestMethod -Uri "$BaseUrl/credits/grant" -Method Post -ContentType "application/json; charset=utf-8" -Body $creditGrantBody -TimeoutSec 30
+if (-not $creditGrant.ok) { throw "/credits/grant returned not ok" }
+$creditConsumeBody = '{"amount":1,"feature":"premium_avatar","reason":"api smoke consume","idempotencyKey":"api-smoke-consume-1"}'
+$creditConsume = Invoke-RestMethod -Uri "$BaseUrl/credits/consume" -Method Post -ContentType "application/json; charset=utf-8" -Body $creditConsumeBody -TimeoutSec 30
+if (-not $creditConsume.ok) { throw "/credits/consume returned not ok" }
+Pass "/credits endpoints return wallet contracts"
+
 Step "API /healthz"
 $health = Invoke-RestMethod -Uri "$BaseUrl/healthz" -Method Get -TimeoutSec 30
 if (-not $health.ok) { throw "/healthz returned not ok" }
 if ($health.contracts -notcontains "auth-status") { throw "/healthz missing auth-status contract" }
 if ($health.contracts -notcontains "account-bootstrap") { throw "/healthz missing account-bootstrap contract" }
 if ($health.contracts -notcontains "entitlements") { throw "/healthz missing entitlements contract" }
+if ($health.contracts -notcontains "credits-balance") { throw "/healthz missing credits-balance contract" }
+if ($health.contracts -notcontains "credits-grant") { throw "/healthz missing credits-grant contract" }
+if ($health.contracts -notcontains "credits-consume") { throw "/healthz missing credits-consume contract" }
 if ($health.contracts -notcontains "avatar-session") { throw "/healthz missing avatar-session contract" }
 if ($health.contracts -notcontains "ai-brain-status") { throw "/healthz missing ai-brain-status contract" }
 if ($health.contracts -notcontains "persona-context") { throw "/healthz missing persona-context contract" }

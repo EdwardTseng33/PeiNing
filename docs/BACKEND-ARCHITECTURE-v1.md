@@ -30,6 +30,8 @@ Current state:
 - The web onboarding/settings flow now calls the `/account-bootstrap` contract through a one-time browser bootstrap flag. Local JSON mode can create the prototype account graph immediately; Supabase mode returns `auth_user_required` until a verified Auth / Apple Sign-In bearer token is available.
 - Auth/onboarding v1 is now locked in `docs/AUTH-ONBOARDING-ARCHITECTURE-v1.md`: v1 providers are Sign in with Apple, Google, and email magic link/OTP fallback; Facebook is intentionally out of v1.
 - Billing/credits v1 is now locked in `docs/BILLING-CREDITS-ENTITLEMENT-v1.md`: the product ladder is Free / Plus / Premium / Concierge, subscriptions are the trust-building base, credits are reserved for expensive/bursty add-ons, and `supabase/sql/006_billing_credits_foundation.sql` adds the first credit wallet and entitlement policy tables.
+- `/credits/balance`, `/credits/grant`, and `/credits/consume` now define the local runtime credit wallet API with JSON fallback, idempotent grants/consumes, included-first deduction, and insufficient-credit fallback.
+- `/avatar-session` now uses the deduction order for premium Avatar: included monthly Avatar allowance first, then credits for overage, then `2d-viseme` fallback.
 - Production API contracts are partially represented in `engine/server.py`.
 - Admin and analytics are not built yet, but their data model must be planned now.
 
@@ -181,6 +183,9 @@ Prototype coverage:
 
 - `/entitlements`
 - `/subscription-event`
+- `/credits/balance`
+- `/credits/grant`
+- `/credits/consume`
 
 Production rule:
 

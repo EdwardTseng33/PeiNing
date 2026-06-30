@@ -7,6 +7,8 @@
 - Subscription ladder: `Free / Plus / Premium / Concierge`.
 - Added `docs/BILLING-CREDITS-ENTITLEMENT-v1.md` as the billing, credits, and entitlement source of truth, including prior-plan review and the current service architecture.
 - Added `supabase/sql/006_billing_credits_foundation.sql` for entitlement policy versions, credit wallets, credit transactions, and credit ledger.
+- Added local runtime credits contracts: `/credits/balance`, `/credits/grant`, and `/credits/consume`, backed by `engine/credits_store.json`.
+- Connected premium Avatar overage to credits in `/avatar-session`; when credits are insufficient, the session falls back to `2d-viseme` instead of breaking.
 - Credits remain reserved for expensive/bursty add-ons such as premium Avatar/GPU minutes; basic companionship should not feel metered.
 - Current implementation still uses backend entitlements + usage ledger; full credits wallet remains future work.
 

@@ -38,6 +38,8 @@
 - Locked the subscription ladder as Free / Plus / Premium / Concierge.
 - Added `docs/BILLING-CREDITS-ENTITLEMENT-v1.md` as the source of truth for plan names, entitlement gates, credits direction, deduction order, service architecture, prior-plan review, and future product ids.
 - Added `supabase/sql/006_billing_credits_foundation.sql` for `entitlement_policy_versions`, `credit_wallets`, `credit_transactions`, and `credit_ledger`.
+- Added the first local runtime credits API: `/credits/balance`, `/credits/grant`, and `/credits/consume`, backed by `engine/credits_store.json`.
+- Connected `/avatar-session` to the credits deduction path: monthly premium Avatar allowance first, purchased/included credits for overage, then graceful fallback to `2d-viseme`.
 - Clarified that subscriptions should protect the trust-building base experience, while credits should only apply to expensive or bursty add-ons such as premium Avatar/GPU minutes.
 
 ## 2026-06-29 Update
