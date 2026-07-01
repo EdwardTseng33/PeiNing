@@ -2,106 +2,110 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>寧寧 · 即時語音測試</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>寧寧</title>
 <style>
-  body{font-family:system-ui,"Noto Sans TC",sans-serif;max-width:480px;margin:0 auto;padding:2rem 1.25rem;color:#2b2b2b}
-  h2{font-weight:500}
-  button{font-size:17px;padding:.7rem 1.4rem;border-radius:999px;border:1px solid #c8c4bb;background:#fff;margin:.3rem}
-  #call{background:#1d9e75;color:#fff;border-color:#1d9e75}
-  #hang{background:#fff}
-  #status{color:#6b6b6b;margin-top:.6rem}
-  #caps{margin-top:1.4rem;text-align:left}
-  #caps p{margin:.4rem 0;line-height:1.6}
-  .me{color:#6b6b6b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:system-ui,"Noto Sans TC",sans-serif;background:#1b1512;color:#fff;overflow:hidden;-webkit-tap-highlight-color:transparent}
+  .stage{position:relative;height:100dvh;width:100%}
+  .face{position:absolute;inset:0;background:center 22%/cover no-repeat #2a211c}
+  .scrim{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.30),rgba(0,0,0,0) 26%,rgba(0,0,0,0) 55%,rgba(0,0,0,.60) 82%,rgba(0,0,0,.82))}
+  .top{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top) + 26px);text-align:center;padding:0 24px}
+  .name{font-size:22px;font-weight:500;letter-spacing:.08em;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+  .state{margin-top:8px;font-size:16px;color:#f6ece2;text-shadow:0 1px 8px rgba(0,0,0,.6);min-height:22px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#69dfae;margin-right:7px;vertical-align:1px}
+  .dot.speak{background:#f4a05a}
+  .controls{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 46px);display:flex;justify-content:center}
+  .wrap{position:relative}
+  .ring{position:absolute;inset:-12px;border-radius:50%;border:3px solid rgba(105,223,174,.65);opacity:0;pointer-events:none}
+  .listening .ring{animation:pulse 1.5s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(1);opacity:.65}100%{transform:scale(1.4);opacity:0}}
+  .btn{width:88px;height:88px;border:none;border-radius:50%;background:#f4a05a;color:#fff;font-size:15px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:transform .1s,background .2s}
+  .btn:active{transform:scale(.96)}
+  .btn.on{background:#e2544f}
+  .btn svg{width:32px;height:32px;fill:#fff}
 </style>
 </head>
 <body>
-  <h2>寧寧 · 即時語音測試</h2>
-  <p id="status">按「開始通話」，允許麥克風，然後直接說話。</p>
-  <button id="call">開始通話</button>
-  <button id="hang" disabled>結束</button>
-  <div id="caps"></div>
+<div class="stage" id="stage">
+  <div class="face" id="face"></div>
+  <div class="scrim"></div>
+  <div class="top">
+    <div class="name">寧寧</div>
+    <div class="state" id="state">按下面的鈕，開始跟寧寧說話</div>
+  </div>
+  <div class="controls">
+    <div class="wrap">
+      <span class="ring"></span>
+      <button class="btn" id="btn" aria-label="開始通話">
+        <svg id="ic" viewBox="0 0 24 24"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21a1 1 0 1 0 2 0v-3.07A7 7 0 0 0 19 11z"/></svg>
+        <span id="btnl">通話</span>
+      </button>
+    </div>
+  </div>
+</div>
 <script>
-let ws, ac, micStream, proc, playCtx, playHead = 0;
-const statusEl = document.getElementById('status');
-const setStatus = t => statusEl.textContent = t;
-function addCap(who, text){
-  const box = document.getElementById('caps');
-  const p = document.createElement('p');
-  if (who === 'user') p.className = 'me';
-  p.textContent = (who === 'user' ? '你：' : '寧寧：') + text;
-  box.appendChild(p);
+document.getElementById('face').style.backgroundImage = "url('avatars/nening-real-female-full.png')";
+const stage = document.getElementById('stage');
+const stateEl = document.getElementById('state');
+const btn = document.getElementById('btn');
+const btnl = document.getElementById('btnl');
+let ws, ac, micStream, proc, playCtx, playHead = 0, on = false, speakTimer = null;
+
+function setState(html, mode){
+  stateEl.innerHTML = html;
+  stage.classList.toggle('listening', mode === 'listen');
 }
-function floatToI16(f){
-  const b = new Int16Array(f.length);
-  for (let i = 0; i < f.length; i++){ let s = Math.max(-1, Math.min(1, f[i])); b[i] = s < 0 ? s * 0x8000 : s * 0x7fff; }
-  return b;
+function listening(){ setState('<span class="dot"></span>我在聽，你說吧…', 'listen'); }
+function speaking(){
+  setState('<span class="dot speak"></span>寧寧正在說…', 'speak');
+  clearTimeout(speakTimer);
+  speakTimer = setTimeout(listening, 1200);
 }
-function downsample(buf, inRate, outRate){
-  if (outRate >= inRate) return buf;
-  const ratio = inRate / outRate, len = Math.round(buf.length / ratio), out = new Float32Array(len);
-  let o = 0, i = 0;
-  while (o < len){
-    const next = Math.round((o + 1) * ratio);
-    let sum = 0, c = 0;
-    for (; i < next && i < buf.length; i++){ sum += buf[i]; c++; }
-    out[o++] = c ? sum / c : 0;
-  }
-  return out;
-}
+function floatToI16(f){ const b=new Int16Array(f.length); for(let i=0;i<f.length;i++){let s=Math.max(-1,Math.min(1,f[i]));b[i]=s<0?s*0x8000:s*0x7fff;} return b; }
+function downsample(buf,inR,outR){ if(outR>=inR)return buf; const r=inR/outR,len=Math.round(buf.length/r),o=new Float32Array(len); let i=0,j=0; while(j<len){const n=Math.round((j+1)*r);let s=0,c=0;for(;i<n&&i<buf.length;i++){s+=buf[i];c++;}o[j++]=c?s/c:0;} return o; }
+
 async function start(){
+  on = true; btn.classList.add('on'); btnl.textContent='掛斷'; btn.setAttribute('aria-label','掛斷');
+  document.getElementById('ic').innerHTML='<path d="M21 15.5c-1.2 0-2.4-.2-3.5-.6a1 1 0 0 0-1 .24l-2.2 2.2a15 15 0 0 1-6.6-6.6l2.2-2.2a1 1 0 0 0 .25-1A11 11 0 0 1 9 4a1 1 0 0 0-1-1H4.5A1.5 1.5 0 0 0 3 4.5C3 13.6 10.4 21 19.5 21A1.5 1.5 0 0 0 21 19.5V16a1 1 0 0 0-1-1z"/>';
+  setState('接通中…');
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  ws = new WebSocket(`${proto}://${location.hostname || '127.0.0.1'}:8201`);
+  ws = new WebSocket(`${proto}://${location.host}`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = async () => {
-    setStatus('通話中… 直接開口說話');
-    playCtx = new AudioContext({ sampleRate: 24000 });
-    playHead = playCtx.currentTime;
-    try {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (e){ setStatus('拿不到麥克風：' + e.message); return; }
+    playCtx = new AudioContext({ sampleRate: 24000 }); playHead = playCtx.currentTime;
+    try { micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:true, noiseSuppression:true } }); }
+    catch(e){ setState('拿不到麥克風，請允許權限'); return; }
     ac = new AudioContext();
     const src = ac.createMediaStreamSource(micStream);
-    proc = ac.createScriptProcessor(4096, 1, 1);
+    proc = ac.createScriptProcessor(4096,1,1);
     src.connect(proc); proc.connect(ac.destination);
-    proc.onaudioprocess = e => {
-      if (!ws || ws.readyState !== 1) return;
-      const ds = downsample(e.inputBuffer.getChannelData(0), ac.sampleRate, 16000);
-      ws.send(floatToI16(ds).buffer);
-    };
+    proc.onaudioprocess = e => { if(ws&&ws.readyState===1) ws.send(floatToI16(downsample(e.inputBuffer.getChannelData(0), ac.sampleRate, 16000)).buffer); };
+    listening();
   };
   ws.onmessage = ev => {
-    if (typeof ev.data === 'string'){
-      const o = JSON.parse(ev.data);
-      if (o.type === 'caption') addCap(o.who, o.text);
-      if (o.type === 'interrupted') playHead = playCtx.currentTime;
-      return;
-    }
-    const i16 = new Int16Array(ev.data), f = new Float32Array(i16.length);
-    for (let k = 0; k < i16.length; k++) f[k] = i16[k] / 0x8000;
-    const b = playCtx.createBuffer(1, f.length, 24000);
-    b.getChannelData(0).set(f);
-    const s = playCtx.createBufferSource();
-    s.buffer = b; s.connect(playCtx.destination);
-    const now = playCtx.currentTime;
-    if (playHead < now) playHead = now;
-    s.start(playHead); playHead += b.duration;
+    if(typeof ev.data === 'string'){ const o=JSON.parse(ev.data); if(o.type==='interrupted'){playHead=playCtx.currentTime;} return; }
+    speaking();
+    const i16=new Int16Array(ev.data), f=new Float32Array(i16.length);
+    for(let k=0;k<i16.length;k++) f[k]=i16[k]/0x8000;
+    const b=playCtx.createBuffer(1,f.length,24000); b.getChannelData(0).set(f);
+    const s=playCtx.createBufferSource(); s.buffer=b; s.connect(playCtx.destination);
+    const now=playCtx.currentTime; if(playHead<now)playHead=now; s.start(playHead); playHead+=b.duration;
   };
-  ws.onclose = () => setStatus('通話結束');
-  ws.onerror = () => setStatus('連線失敗，確認語音橋接有開（:8201）');
-  document.getElementById('call').disabled = true;
-  document.getElementById('hang').disabled = false;
+  ws.onclose = () => { if(on) stop(); };
+  ws.onerror = () => setState('連線失敗，確認語音服務有開');
 }
 function stop(){
-  if (proc) proc.disconnect();
-  if (micStream) micStream.getTracks().forEach(t => t.stop());
-  if (ws) ws.close();
-  document.getElementById('call').disabled = false;
-  document.getElementById('hang').disabled = true;
+  on=false; btn.classList.remove('on'); btnl.textContent='通話'; btn.setAttribute('aria-label','開始通話');
+  document.getElementById('ic').innerHTML='<path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21a1 1 0 1 0 2 0v-3.07A7 7 0 0 0 19 11z"/>';
+  stage.classList.remove('listening');
+  setState('通話結束，想聊再按一次');
+  try{ if(proc)proc.disconnect(); }catch(e){}
+  try{ if(micStream)micStream.getTracks().forEach(t=>t.stop()); }catch(e){}
+  try{ if(ws)ws.close(); }catch(e){}
 }
-document.getElementById('call').onclick = start;
-document.getElementById('hang').onclick = stop;
+btn.onclick = () => on ? stop() : start();
 </script>
 </body>
 </html>

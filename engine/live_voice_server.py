@@ -26,6 +26,8 @@ import chat_engine as eng
 from google import genai
 from google.genai import types
 import websockets
+from websockets.http11 import Response
+from websockets.datastructures import Headers
 
 MODEL = "gemini-3.1-flash-live-preview"
 KEY = os.environ.get("GEMINI_API_KEY")
@@ -34,14 +36,45 @@ if not KEY:
 
 client = genai.Client(api_key=KEY)
 
+import mimetypes
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+WEB = os.path.normpath(os.path.join(HERE, "..", "web"))
+
+
+def _file_response(rel):
+    fp = os.path.normpath(os.path.join(WEB, rel))
+    if not fp.startswith(WEB) or not os.path.isfile(fp):
+        return Response(404, "Not Found", Headers({"Content-Length": "0"}), b"")
+    with open(fp, "rb") as f:
+        body = f.read()
+    ctype = mimetypes.guess_type(fp)[0] or "application/octet-stream"
+    h = Headers()
+    h["Content-Type"] = ctype + ("; charset=utf-8" if ctype.startswith("text/") else "")
+    h["Content-Length"] = str(len(body))
+    return Response(200, "OK", h, body)
+
+
+def process_request(connection, request):
+    """非 WebSocket 的請求就當靜態網站服務（測試頁＋臉圖等），讓網頁與語音走同一個門。"""
+    if request.headers.get("Upgrade", "").lower() == "websocket":
+        return None
+    path = request.path.split("?")[0].lstrip("/")
+    if path in ("", "index.html"):
+        path = "live-voice-test.html"
+    return _file_response(path)
+
 
 def system_instruction(char="寧寧"):
     c = eng.CHARS.get(char) or eng.CHARS["寧寧"]
     base = c.get("persona", "")
     base += eng.RED
-    if c.get("type") == "human":
-        base += eng._profile_ctx()
-    base += "（現在是即時語音通話，像講電話。講話要口語、簡短、溫暖，一次一兩句就好，別長篇大論。）"
+    base += (
+        "（現在是即時語音通話。你剛接起電話：先用『一句』溫暖的話打招呼就好，別一次講一大串。"
+        "你還不知道對方是誰，所以絕對不要亂猜名字、不要亂叫稱呼（不可以叫人『阿姨』或任何名字）；"
+        "可以自然地說『喂～我是寧寧，今天想聊聊什麼呀？』。"
+        "整通電話都要：口語、句子短、一次只講一兩句、講完就停下來等對方回應。）"
+    )
     return base
 
 
@@ -100,8 +133,8 @@ async def handle(ws):
 
 
 async def main():
-    async with websockets.serve(handle, "127.0.0.1", 8201, max_size=None):
-        print("即時語音橋接已啟動：ws://127.0.0.1:8201（模型 " + MODEL + "）")
+    async with websockets.serve(handle, "127.0.0.1", 8201, max_size=None, process_request=process_request):
+        print("即時語音橋接已啟動：http://127.0.0.1:8201 （網頁＋語音同門，模型 " + MODEL + "）")
         await asyncio.Future()
 
 
