@@ -2007,17 +2007,46 @@ def relationship_state_from_turn(data, context, stored_memories):
     })
 
 
+def _post_turn_extract(history, person_id, store=True):
+    """聊完萃取記憶：真萃取（memory_engine，只存長輩事實）優先，失敗退回關鍵字版。
+    回傳 dict 相容原本 butler 用法。保留四層 tier。"""
+    candidates, extractor = [], "keyword_fallback"
+    try:
+        import memory_engine
+        candidates = memory_engine.extract(history)
+        if candidates:
+            extractor = "memory_engine"
+    except Exception:
+        candidates = []
+    if not candidates:
+        candidates = (model_router.memory_extract_response({"history": history}) or {}).get("candidates") or []
+    stored_items = []
+    if store and candidates:
+        new_items = [model_router.normalize_memory_item(c, person_id) for c in candidates]
+        for item, cand in zip(new_items, candidates):
+            if cand.get("tier"):
+                item["tier"] = cand["tier"]
+        stored_items = append_memory_items(new_items)
+    return {
+        "candidates": candidates,
+        "memoryItems": stored_items,
+        "stored": len(stored_items),
+        "extractor": extractor,
+        "storagePolicy": {
+            "storeRawTranscriptByDefault": False,
+            "requiresConsentForSensitive": True,
+            "supportsUpdateAndSupersede": True,
+        },
+    }
+
+
 def butler_post_turn_response(data):
     data = data or {}
     history = data.get("history") or []
     char = data.get("char") or DEFAULT_CHAR
     context = build_reply_context(history, char, data)
-    extract = memory_extract_response({
-        "action": "store" if (data.get("storeMemory") is not False) else "preview",
-        "history": history,
-        "personId": data.get("personId") or data.get("person_id") or PRIMARY_CARE_RECIPIENT_ID,
-        "effort": data.get("effort") or "quick",
-    })
+    person_id = data.get("personId") or data.get("person_id") or PRIMARY_CARE_RECIPIENT_ID
+    extract = _post_turn_extract(history, person_id, store=(data.get("storeMemory") is not False))
     stored_memories = extract.get("memoryItems") or []
     relationship_state = relationship_state_from_turn(data, context, stored_memories)
     saved_state = upsert_relationship_state(relationship_state)
@@ -2037,6 +2066,7 @@ def butler_post_turn_response(data):
         "memory": {
             "stored": extract.get("stored", 0),
             "candidateCount": len(extract.get("candidates") or []),
+            "extractor": extract.get("extractor"),
             "storagePolicy": extract.get("storagePolicy"),
         },
         "relationshipState": saved_state,
