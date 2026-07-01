@@ -49,6 +49,7 @@
 - Started P0-4 from `docs/健檢修復排程-2026-07-01.md`.
 - In `MUNEA_REQUIRE_AUTH=1` mode, normal user bearer auth can read user-scoped billing/credits data, but cannot directly mutate entitlements or credit balances.
 - Direct `/credits/grant`, `/credits/consume`, and entitlement save/replace now require `X-Munea-Admin-Token`; `/subscription-event` can also accept trusted `X-Munea-Provider-Token`.
+- Successful privileged billing mutations now append audit events via Supabase `audit_events` when available, or `engine/audit_events_store.json` local fallback in prototype mode.
 
 ## 2026-07-01 Update - Dual-AI collaboration board aligned
 

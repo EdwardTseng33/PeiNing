@@ -166,6 +166,8 @@ def fake_request(method, table, query=None, payload=None, prefer=None):
             return [{**payload, "id": "credit-transaction-1", "created_at": "2026-06-29T00:00:00Z"}]
         if table == "credit_ledger":
             return [{**payload, "id": "credit-ledger-1", "created_at": "2026-06-29T00:00:00Z"}]
+        if table == "audit_events":
+            return [{**payload, "id": "audit-event-1", "created_at": "2026-06-29T00:00:00Z"}]
         raise AssertionError(f"Unexpected write table: {table}")
 
     assert method == "GET"
@@ -395,6 +397,14 @@ saved_credits = adapter.save_credits_store({
     }],
 })
 assert saved_credits["accountId"] == env["MUNEA_SUPABASE_ACCOUNT_ID"]
+saved_audit = adapter.append_audit_event({
+    "eventType": "credits_granted",
+    "targetTable": "credit_transactions",
+    "targetId": "not-a-uuid-local-transaction",
+    "details": {"actorType": "admin", "amount": 1},
+})
+assert saved_audit["eventType"] == "credits_granted"
+assert saved_audit["targetId"] is None
 privacy_store = adapter.load_privacy_requests_store()
 assert privacy_store["requests"][0]["type"] == "export"
 privacy_req = adapter.append_privacy_request("account_deletion", {"reason": "test"})
@@ -760,6 +770,7 @@ import server
 
 with tempfile.TemporaryDirectory() as d:
     server.PRODUCT_EVENTS_PATH = str(Path(d) / "product_events.json")
+    server.AUDIT_EVENTS_STORE_PATH = str(Path(d) / "audit_events_store.json")
     event = server.product_event_response({
         "eventName": "voice_session_completed",
         "personId": "local-person-self",
@@ -796,6 +807,14 @@ with tempfile.TemporaryDirectory() as d:
     credits = server.admin_credits_summary({"limit": 10})
     assert credits["ok"] is True
     assert credits["walletSummary"]["currencyCode"] == "MUNEA_CREDIT"
+    audit = server.append_audit_event({
+        "eventType": "credits_granted",
+        "targetTable": "credit_transactions",
+        "details": {"actorType": "admin", "amount": 1},
+    })
+    assert audit["eventType"] == "credits_granted"
+    audit_store = server.read_json_file(server.AUDIT_EVENTS_STORE_PATH, {})
+    assert audit_store["events"][0]["eventType"] == "credits_granted"
     ok, code = server.admin_authorized({})
     assert ok is False
     assert code == "admin_token_not_configured"

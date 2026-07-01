@@ -34,6 +34,7 @@ BILLING_STORE_PATH = os.environ.get("MUNEA_BILLING_STORE_PATH") or os.path.join(
 CREDITS_STORE_PATH = os.environ.get("MUNEA_CREDITS_STORE_PATH") or os.path.join(HERE, "credits_store.json")
 PRIVACY_REQUESTS_PATH = os.environ.get("MUNEA_PRIVACY_REQUESTS_PATH") or os.path.join(HERE, "privacy_requests.json")
 PRODUCT_EVENTS_PATH = os.environ.get("MUNEA_PRODUCT_EVENTS_PATH") or os.path.join(HERE, "product_events.json")
+AUDIT_EVENTS_STORE_PATH = os.environ.get("MUNEA_AUDIT_EVENTS_STORE_PATH") or os.path.join(HERE, "audit_events_store.json")
 MEMORY_ITEMS_PATH = os.environ.get("MUNEA_MEMORY_ITEMS_PATH") or os.path.join(HERE, "memory_items.json")
 PERCEPTION_SNAPSHOTS_PATH = os.environ.get("MUNEA_PERCEPTION_SNAPSHOTS_PATH") or os.path.join(HERE, "perception_snapshots.json")
 RELATIONSHIP_STATES_PATH = os.environ.get("MUNEA_RELATIONSHIP_STATES_PATH") or os.path.join(HERE, "companion_relationship_states.json")
@@ -1260,6 +1261,54 @@ def privileged_billing_write_authorized(headers, allow_provider=False):
     return False, code
 
 
+def privileged_actor_context(headers=None, allow_provider=False):
+    headers = headers or {}
+    admin_ok, _ = admin_authorized(headers)
+    if admin_ok:
+        return {"actorType": "admin", "auth": "admin-token"}
+    if allow_provider:
+        provider_ok, _ = provider_webhook_authorized(headers)
+        if provider_ok:
+            return {"actorType": "provider", "auth": "provider-webhook"}
+    if not auth_required_mode():
+        return {"actorType": "local-prototype", "auth": "none"}
+    return {"actorType": "unknown", "auth": "unverified"}
+
+
+def default_audit_events_store():
+    return {"schemaVersion": 1, "events": [], "updatedAt": utc_now()}
+
+
+def normalize_audit_event(event=None):
+    event = event or {}
+    return {
+        "id": event.get("id") or f"audit_{int(time.time() * 1000)}",
+        "accountId": event.get("accountId") or event.get("account_id") or "local-demo-account",
+        "actorUserId": event.get("actorUserId") or event.get("actor_user_id"),
+        "eventType": str(event.get("eventType") or event.get("event_type") or "unknown_event")[:80],
+        "targetTable": event.get("targetTable") or event.get("target_table"),
+        "targetId": event.get("targetId") or event.get("target_id"),
+        "details": event.get("details") or {},
+        "createdAt": event.get("createdAt") or event.get("created_at") or utc_now(),
+    }
+
+
+def append_audit_event(event=None):
+    normalized = normalize_audit_event(event)
+    try:
+        remote_event = data_backend().append_audit_event(normalized)
+        if remote_event:
+            return normalize_audit_event(remote_event)
+    except Exception:
+        pass
+    store = read_json_file(AUDIT_EVENTS_STORE_PATH, default_audit_events_store())
+    events = [normalize_audit_event(e) for e in store.get("events", [])]
+    events.insert(0, normalized)
+    store = {"schemaVersion": 1, "events": events[:1000], "updatedAt": utc_now()}
+    write_json_file(AUDIT_EVENTS_STORE_PATH, store)
+    return normalized
+
+
 def default_billing_store():
     return {
         "schemaVersion": 1,
@@ -2176,13 +2225,37 @@ class H(BaseHTTPRequestHandler):
                     if not ok:
                         self._json_error(403, code, "Admin token is required for entitlement changes")
                         return
-                self._json(entitlements_response(data))
+                response = entitlements_response(data)
+                if action in ("save", "replace") and response.get("ok"):
+                    append_audit_event({
+                        "eventType": "entitlements_changed",
+                        "targetTable": "subscription_ledger",
+                        "details": {
+                            **privileged_actor_context(self.headers),
+                            "activePlan": response.get("billing", {}).get("activePlan"),
+                            "action": action,
+                        },
+                    })
+                self._json(response)
             elif self.path == "/subscription-event":
                 ok, code = privileged_billing_write_authorized(self.headers, allow_provider=True)
                 if not ok:
                     self._json_error(403, code, "Provider or admin token is required for subscription events")
                     return
-                self._json(subscription_event_response(data))
+                response = subscription_event_response(data)
+                if response.get("ok"):
+                    event = data.get("event") or {}
+                    append_audit_event({
+                        "eventType": "subscription_event_accepted",
+                        "targetTable": "subscription_ledger",
+                        "details": {
+                            **privileged_actor_context(self.headers, allow_provider=True),
+                            "provider": data.get("provider") or "apple-app-store-server-notifications-v2",
+                            "eventType": event.get("type") or event.get("notificationType") or "unknown",
+                            "serverVerificationRequired": True,
+                        },
+                    })
+                self._json(response)
             elif self.path == "/credits/balance":
                 self._json(credits_balance_response(data))
             elif self.path == "/credits/grant":
@@ -2190,13 +2263,40 @@ class H(BaseHTTPRequestHandler):
                 if not ok:
                     self._json_error(403, code, "Admin token is required for credit grants")
                     return
-                self._json(credits_grant_response(data))
+                response = credits_grant_response(data)
+                if response.get("ok"):
+                    tx = response.get("transaction") or {}
+                    append_audit_event({
+                        "eventType": "credits_granted",
+                        "targetTable": "credit_transactions",
+                        "details": {
+                            **privileged_actor_context(self.headers),
+                            "transactionId": tx.get("id"),
+                            "amount": tx.get("amount"),
+                            "walletType": tx.get("walletType"),
+                            "source": tx.get("source"),
+                            "reason": tx.get("reason"),
+                        },
+                    })
+                self._json(response)
             elif self.path == "/credits/consume":
                 ok, code = privileged_billing_write_authorized(self.headers)
                 if not ok:
                     self._json_error(403, code, "Admin token is required for direct credit consumption")
                     return
-                self._json(credits_consume_response(data))
+                response = credits_consume_response(data)
+                if response.get("ok"):
+                    append_audit_event({
+                        "eventType": "credits_consumed_directly",
+                        "targetTable": "credit_transactions",
+                        "details": {
+                            **privileged_actor_context(self.headers),
+                            "transactionIds": [tx.get("id") for tx in response.get("transactions", [])],
+                            "amount": data.get("amount") or data.get("credits"),
+                            "feature": data.get("feature"),
+                        },
+                    })
+                self._json(response)
             elif self.path == "/privacy-export":
                 self._json(privacy_export_response(data))
             elif self.path == "/account-deletion":

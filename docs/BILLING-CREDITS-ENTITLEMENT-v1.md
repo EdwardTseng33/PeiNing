@@ -54,6 +54,7 @@ Implemented now:
 - `POST /avatar-session` gates premium Avatar modes and records premium Avatar minutes.
 - `POST /credits/balance`, `POST /credits/grant`, and `POST /credits/consume` define the local prototype runtime contract for wallet balance, idempotent grants, and graceful insufficient-credit fallback.
 - `/avatar-session` now checks credits when premium Avatar monthly allowance is exhausted and consumes overage credits only on completed premium sessions.
+- Privileged billing mutations now append audit events to `audit_events` when Supabase is enabled, with local ignored JSON fallback during prototype mode.
 - Local fallback uses `engine/billing_store.json`.
 - Local credits fallback uses `engine/credits_store.json`.
 
@@ -235,6 +236,7 @@ Current:
 - `POST /credits/balance`
 - `POST /credits/grant` - privileged write in production mode; requires admin token.
 - `POST /credits/consume` - privileged direct write in production mode; normal feature usage should consume credits through backend feature routes such as `/avatar-session`.
+- Audit events for privileged billing writes are part of the backend contract.
 
 Next production APIs:
 

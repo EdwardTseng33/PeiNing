@@ -512,6 +512,18 @@ class SupabaseAdapter:
         )
         return self.product_event_row_to_event(rows[0]) if rows else None
 
+    def append_audit_event(self, event):
+        if not self.enabled():
+            return None
+        rows = self._request(
+            "POST",
+            "audit_events",
+            query={"select": "*"},
+            payload=self.audit_event_to_row(event),
+            prefer="return=representation",
+        )
+        return self.audit_row_to_event(rows[0]) if rows else None
+
     def load_product_events(self, since_iso=None, limit=500):
         if not self.enabled():
             return None
@@ -895,6 +907,37 @@ class SupabaseAdapter:
             "source": event.get("source") or "munea-api",
             "session_id": event.get("sessionId") or event.get("session_id"),
             "properties": event.get("properties") or {},
+        }
+
+    def audit_event_to_row(self, event):
+        event = event or {}
+        target_id = event.get("targetId") or event.get("target_id")
+        if not self._is_uuid(target_id):
+            target_id = None
+        actor_user_id = event.get("actorUserId") or event.get("actor_user_id")
+        if not self._is_uuid(actor_user_id):
+            actor_user_id = None
+        return {
+            "account_id": event.get("accountId") or event.get("account_id") or self.account_id,
+            "actor_user_id": actor_user_id,
+            "event_type": event.get("eventType") or event.get("event_type") or "unknown_event",
+            "target_table": event.get("targetTable") or event.get("target_table"),
+            "target_id": target_id,
+            "details": event.get("details") or {},
+        }
+
+    @staticmethod
+    def audit_row_to_event(row):
+        row = row or {}
+        return {
+            "id": row.get("id") or "",
+            "accountId": row.get("account_id") or "",
+            "actorUserId": row.get("actor_user_id"),
+            "eventType": row.get("event_type") or "unknown_event",
+            "targetTable": row.get("target_table"),
+            "targetId": row.get("target_id"),
+            "details": row.get("details") or {},
+            "createdAt": row.get("created_at"),
         }
 
     @staticmethod
