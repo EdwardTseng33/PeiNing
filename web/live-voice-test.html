@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>寧寧 · 即時語音測試</title>
+<style>
+  body{font-family:system-ui,"Noto Sans TC",sans-serif;max-width:480px;margin:0 auto;padding:2rem 1.25rem;color:#2b2b2b}
+  h2{font-weight:500}
+  button{font-size:17px;padding:.7rem 1.4rem;border-radius:999px;border:1px solid #c8c4bb;background:#fff;margin:.3rem}
+  #call{background:#1d9e75;color:#fff;border-color:#1d9e75}
+  #hang{background:#fff}
+  #status{color:#6b6b6b;margin-top:.6rem}
+  #caps{margin-top:1.4rem;text-align:left}
+  #caps p{margin:.4rem 0;line-height:1.6}
+  .me{color:#6b6b6b}
+</style>
+</head>
+<body>
+  <h2>寧寧 · 即時語音測試</h2>
+  <p id="status">按「開始通話」，允許麥克風，然後直接說話。</p>
+  <button id="call">開始通話</button>
+  <button id="hang" disabled>結束</button>
+  <div id="caps"></div>
+<script>
+let ws, ac, micStream, proc, playCtx, playHead = 0;
+const statusEl = document.getElementById('status');
+const setStatus = t => statusEl.textContent = t;
+function addCap(who, text){
+  const box = document.getElementById('caps');
+  const p = document.createElement('p');
+  if (who === 'user') p.className = 'me';
+  p.textContent = (who === 'user' ? '你：' : '寧寧：') + text;
+  box.appendChild(p);
+}
+function floatToI16(f){
+  const b = new Int16Array(f.length);
+  for (let i = 0; i < f.length; i++){ let s = Math.max(-1, Math.min(1, f[i])); b[i] = s < 0 ? s * 0x8000 : s * 0x7fff; }
+  return b;
+}
+function downsample(buf, inRate, outRate){
+  if (outRate >= inRate) return buf;
+  const ratio = inRate / outRate, len = Math.round(buf.length / ratio), out = new Float32Array(len);
+  let o = 0, i = 0;
+  while (o < len){
+    const next = Math.round((o + 1) * ratio);
+    let sum = 0, c = 0;
+    for (; i < next && i < buf.length; i++){ sum += buf[i]; c++; }
+    out[o++] = c ? sum / c : 0;
+  }
+  return out;
+}
+async function start(){
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.hostname || '127.0.0.1'}:8201`);
+  ws.binaryType = 'arraybuffer';
+  ws.onopen = async () => {
+    setStatus('通話中… 直接開口說話');
+    playCtx = new AudioContext({ sampleRate: 24000 });
+    playHead = playCtx.currentTime;
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e){ setStatus('拿不到麥克風：' + e.message); return; }
+    ac = new AudioContext();
+    const src = ac.createMediaStreamSource(micStream);
+    proc = ac.createScriptProcessor(4096, 1, 1);
+    src.connect(proc); proc.connect(ac.destination);
+    proc.onaudioprocess = e => {
+      if (!ws || ws.readyState !== 1) return;
+      const ds = downsample(e.inputBuffer.getChannelData(0), ac.sampleRate, 16000);
+      ws.send(floatToI16(ds).buffer);
+    };
+  };
+  ws.onmessage = ev => {
+    if (typeof ev.data === 'string'){
+      const o = JSON.parse(ev.data);
+      if (o.type === 'caption') addCap(o.who, o.text);
+      if (o.type === 'interrupted') playHead = playCtx.currentTime;
+      return;
+    }
+    const i16 = new Int16Array(ev.data), f = new Float32Array(i16.length);
+    for (let k = 0; k < i16.length; k++) f[k] = i16[k] / 0x8000;
+    const b = playCtx.createBuffer(1, f.length, 24000);
+    b.getChannelData(0).set(f);
+    const s = playCtx.createBufferSource();
+    s.buffer = b; s.connect(playCtx.destination);
+    const now = playCtx.currentTime;
+    if (playHead < now) playHead = now;
+    s.start(playHead); playHead += b.duration;
+  };
+  ws.onclose = () => setStatus('通話結束');
+  ws.onerror = () => setStatus('連線失敗，確認語音橋接有開（:8201）');
+  document.getElementById('call').disabled = true;
+  document.getElementById('hang').disabled = false;
+}
+function stop(){
+  if (proc) proc.disconnect();
+  if (micStream) micStream.getTracks().forEach(t => t.stop());
+  if (ws) ws.close();
+  document.getElementById('call').disabled = false;
+  document.getElementById('hang').disabled = true;
+}
+document.getElementById('call').onclick = start;
+document.getElementById('hang').onclick = stop;
+</script>
+</body>
+</html>

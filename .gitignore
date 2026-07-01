@@ -35,5 +35,7 @@ engine/perception_snapshots.json
 engine/privacy_requests.json
 engine/user_profile.json
 engine/*.tmp.*
+# python 本機環境（跑引擎/即時語音用，見 engine/requirements.txt）
+.venv/
 __pycache__/
 *.pyc
