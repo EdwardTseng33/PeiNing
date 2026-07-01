@@ -27,5 +27,13 @@ Thumbs.db
 voice-samples/*.wav
 engine/*.wav
 engine/product_events.json
+engine/*_store.json
+engine/companion_profile.json
+engine/companion_relationship_states.json
+engine/memory_items.json
+engine/perception_snapshots.json
+engine/privacy_requests.json
+engine/user_profile.json
+engine/*.tmp.*
 __pycache__/
 *.pyc

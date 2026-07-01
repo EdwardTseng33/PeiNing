@@ -12,16 +12,54 @@ API_KEY = os.environ.get("GEMINI_API_KEY")
 if not API_KEY:
     sys.exit("需要 GEMINI_API_KEY")
 HERE = os.path.dirname(os.path.abspath(__file__))
+USER_PROFILE_PATH = os.environ.get("MUNEA_USER_PROFILE_PATH") or os.path.join(HERE, "user_profile.json")
 client = genai.Client(api_key=API_KEY)
 
 CHARS = json.load(open(os.path.join(HERE, "characters.json"), encoding="utf-8"))
 RED = "（界線：只陪伴／生活提醒／情緒支持，不診斷不治療、絕不說不用看醫生；嚴重不適或想不開→不裝醫生，溫柔轉介家人／1925／119。）"
+DEFAULT_USER_PROFILE = {
+    "稱呼": "使用者",
+    "年紀": "",
+    "住在": "",
+    "喜好": [],
+    "回憶": [],
+    "興趣權重": {},
+}
+
+
+def _read_user_profile():
+    if not os.path.exists(USER_PROFILE_PATH):
+        return dict(DEFAULT_USER_PROFILE)
+    try:
+        with open(USER_PROFILE_PATH, encoding="utf-8") as f:
+            return {**DEFAULT_USER_PROFILE, **json.load(f)}
+    except Exception:
+        return dict(DEFAULT_USER_PROFILE)
+
+
+def _write_user_profile(profile):
+    directory = os.path.dirname(os.path.abspath(USER_PROFILE_PATH))
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    tmp_path = f"{USER_PROFILE_PATH}.tmp.{os.getpid()}.{int(time.time() * 1000)}"
+    try:
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(profile, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, USER_PROFILE_PATH)
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
 
 def _profile_ctx():
-    pf = os.path.join(HERE, "user_profile.json")
-    if not os.path.exists(pf):
+    if not os.path.exists(USER_PROFILE_PATH):
         return ""
-    p = json.load(open(pf, encoding="utf-8"))
+    p = _read_user_profile()
     return (f"\n（你正陪伴的人：你都叫她「{p.get('稱呼','')}」、{p.get('年紀','')}歲、住{p.get('住在','')}；"
             f"喜歡{'、'.join(p.get('喜好', []))}；你記得她說過：{'；'.join(p.get('回憶', []))}。自然帶入、別像念資料。）")
 
@@ -70,10 +108,9 @@ def remember(history_text):
                 config=types.GenerateContentConfig(response_mime_type="application/json"))
             new = json.loads(r.text)
             if new:
-                pf = os.path.join(HERE, "user_profile.json")
-                p = json.load(open(pf, encoding="utf-8"))
+                p = _read_user_profile()
                 p.setdefault("回憶", []).extend(new)
-                json.dump(p, open(pf, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+                _write_user_profile(p)
             return new
         except Exception:
             pass
@@ -104,8 +141,7 @@ def open_chat(char="寧寧"):
 
 def consolidate():
     """整理員：把回憶去重、合併同類、用新蓋舊、移除與基本資料重複的，存回乾淨清單。"""
-    pf = os.path.join(HERE, "user_profile.json")
-    p = json.load(open(pf, encoding="utf-8"))
+    p = _read_user_profile()
     mems = p.get("回憶", [])
     prompt = ("把以下『關於這個人的記憶』整理乾淨：合併重複／同類、用較新的蓋掉矛盾的舊的、"
               "濃縮成精簡自然的句子、移除跟基本資料重複的。保留所有重要的事、別漏。只回 JSON 字串陣列。\n\n"
@@ -117,7 +153,7 @@ def consolidate():
                 config=types.GenerateContentConfig(response_mime_type="application/json"))
             clean = json.loads(r.text)
             p["回憶"] = clean
-            json.dump(p, open(pf, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+            _write_user_profile(p)
             return mems, clean
         except Exception:
             pass
@@ -126,8 +162,7 @@ def consolidate():
 
 def update_interests(conversation):
     """興趣權重＋反向：從對話找出喜歡/不喜歡的主題，累加/扣減分數，存回檔。"""
-    pf = os.path.join(HERE, "user_profile.json")
-    p = json.load(open(pf, encoding="utf-8"))
+    p = _read_user_profile()
     weights = p.get("興趣權重", {})
     prompt = ("從以下對話，找這個人對哪些『主題/活動』表達了興趣或反感。"
               "喜歡/常做＝正分（+2 很愛、+1 有興趣）；不喜歡/排斥＝負分（-2 討厭、-1 不太愛）。"
@@ -141,7 +176,7 @@ def update_interests(conversation):
             for k, v in delta.items():
                 weights[k] = weights.get(k, 0) + v
             p["興趣權重"] = weights
-            json.dump(p, open(pf, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+            _write_user_profile(p)
             return delta, weights
         except Exception:
             pass

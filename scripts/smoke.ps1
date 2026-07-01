@@ -28,11 +28,33 @@ Pass "Python files compile"
 Step "JSON parse"
 @'
 import json, pathlib
-for p in ["engine/characters.json", "engine/user_profile.json", "engine/companion_profile.json", "engine/app_profile_store.json", "engine/billing_store.json", "engine/credits_store.json", "engine/privacy_requests.json", "engine/memory_items.json", "engine/perception_snapshots.json", "engine/companion_relationship_states.json"]:
+for p in ["engine/characters.json"]:
     json.loads(pathlib.Path(p).read_text(encoding="utf-8"))
     print(f"{p} OK")
 '@ | python -
-Pass "JSON files parse"
+Pass "Static JSON files parse"
+
+Step "Chat engine profile is local runtime data"
+@'
+import os, sys, tempfile
+from pathlib import Path
+os.environ.setdefault("GEMINI_API_KEY", "smoke-test-key")
+sys.path.insert(0, "engine")
+import chat_engine
+
+with tempfile.TemporaryDirectory() as d:
+    chat_engine.USER_PROFILE_PATH = str(Path(d) / "user_profile.json")
+    profile = chat_engine._read_user_profile()
+    assert profile["稱呼"] == "使用者"
+    assert profile["回憶"] == []
+    profile["回憶"].append("喜歡早上散步")
+    chat_engine._write_user_profile(profile)
+    assert Path(chat_engine.USER_PROFILE_PATH).exists()
+    loaded = chat_engine._read_user_profile()
+    assert loaded["回憶"] == ["喜歡早上散步"]
+print("chat engine runtime profile OK")
+'@ | python -
+Pass "Chat engine user profile is runtime-local"
 
 Step "Voice note payload decode"
 @'

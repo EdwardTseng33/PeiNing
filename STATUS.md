@@ -25,6 +25,15 @@
 - Added an in-process JSON store write lock around atomic fallback writes so threaded local requests do not write fallback JSON files at the same time.
 - `/healthz` now reports `runtime.concurrency = threading` and `runtime.jsonStoreWrites = atomic`.
 
+## 2026-07-01 Update - Runtime JSON stores moving out of Git
+
+**Status:** completed for local runtime fallback files.
+
+- Started P0-2 from `docs/健檢修復排程-2026-07-01.md`.
+- Runtime JSON stores are being moved out of Git tracking so local profile, billing, credits, privacy, memory, analytics, and relationship fallback data cannot be accidentally committed as real user data.
+- `chat_engine.py` now tolerates missing `user_profile.json` and creates/writes it only as a local runtime file.
+- Git now only tracks static `engine/characters.json`; local runtime JSON files remain on disk but are ignored.
+
 ## 2026-07-01 Update - Dual-AI collaboration board aligned
 
 **Status:** completed and ready for GitHub sync.

@@ -32,7 +32,7 @@
 | 誰 | 在做什麼 | 預計動到哪些檔 | 開始時間 | 狀態 |
 |---|---|---|---|---|
 | Claude / 城堡 | 健檢修復排程 P0-1：中文危機詞庫（Guardian 中文自傷/急症偵測） | `engine/model_router.py`、`docs/健檢修復排程-2026-07-01.md`、本看板 | 2026-07-01 | 完成，待本次同步推 GitHub |
-| Codex | 健檢修復排程 P0-8：server threading，避免慢請求卡住整個本地 engine；同步加 JSON 寫入鎖 | `engine/server.py`、`docs/健檢修復排程-2026-07-01.md`、`STATUS.md`、`scripts/smoke.ps1` | 2026-07-01 | 完成，待推 GitHub |
+| Codex | 健檢修復排程 P0-2：runtime JSON store 移出版控，避免真實用戶資料被提交 | `.gitignore`、`engine/*.json` tracking、`engine/chat_engine.py`、`docs/健檢修復排程-2026-07-01.md`、`STATUS.md`、`scripts/smoke.ps1` | 2026-07-01 | 完成，待推 GitHub |
 
 > 📋 **開發排程**見 [健檢修復排程-2026-07-01](健檢修復排程-2026-07-01.md)（健檢三方發現的問題已排 P0/P1/核心＋認領欄）。**認領前先看、避免重複。**
 >
