@@ -54,16 +54,21 @@ def extract(history):
     user_text = _user_text(history)
     if not user_text.strip():
         return []
-    try:
-        r = _client.models.generate_content(
-            model=MODEL,
-            contents=[types.Content(role="user", parts=[types.Part(text="長輩說的話：\n" + user_text)])],
-            config=types.GenerateContentConfig(
-                system_instruction=_SYS, temperature=0.2, response_mime_type="application/json"
-            ),
-        )
-        items = json.loads(r.text)
-    except Exception:
+    items = None
+    for _ in range(2):  # 記憶萃取失敗＝長輩講的話沒被記住，值得重試一次再放棄
+        try:
+            r = _client.models.generate_content(
+                model=MODEL,
+                contents=[types.Content(role="user", parts=[types.Part(text="長輩說的話：\n" + user_text)])],
+                config=types.GenerateContentConfig(
+                    system_instruction=_SYS, temperature=0.2, response_mime_type="application/json"
+                ),
+            )
+            items = json.loads(r.text)
+            break
+        except Exception:
+            items = None
+    if items is None:
         return []
     out = []
     for it in (items if isinstance(items, list) else []):
@@ -137,6 +142,82 @@ def retrieve(query, items, limit=5):
         row["_sim"] = round(sim, 3)
         out.append(row)
     return out
+
+
+_RECONCILE_SYS = """你是沐寧的記憶對帳員。給你一批「新萃取的候選事實」和一批「既有記憶」。
+對每一條候選，判斷它跟既有記憶的關係，選一個動作：
+- ADD：全新的事實，既有記憶沒有涵蓋 → 新增。
+- NOOP：既有記憶已經幾乎一樣、涵蓋了 → 不動。
+- SUPERSEDE：候選跟某條既有記憶「講的是同一件事，但內容變了或相反了」→ 用新的取代舊的。
+  （例：住台南→搬台北；女兒叫美華→其實叫美玲；婚期下個月→改後年；血壓正常→最近偏高；還在上班→退休了）
+只回 JSON：{"decisions":[{"i":0,"action":"ADD|NOOP|SUPERSEDE","targetId":"","reason":"一句話"}]}
+- i = 候選的編號。
+- targetId：只有 SUPERSEDE 要填（被取代的那條既有記憶 id），其它留空字串。
+判斷重點：SUPERSEDE 是「同一主題的事實更新」，不是「兩件不同的事」。住哪、家人姓名、婚喪嫁娶、
+健康狀況、居住安排、工作狀態這類「會變的事實」特別要抓；抓不準時寧可 ADD，不要亂 SUPERSEDE。"""
+
+
+def reconcile(candidates, existing):
+    """寫入即對帳（借鏡 Mem0 的 ADD/UPDATE/DELETE，但只填我們自己 schema 的 supersedes 欄位）。
+    對每條新候選判斷：新增 / 已知不動 / 取代某條舊記憶。
+    回 {"add":[cand...], "supersede":[{"new":cand,"oldId":id}...], "noop":[cand...]}。
+    無 client 或無既有記憶時，全部當 ADD（跟舊行為相容）。"""
+    candidates = list(candidates or [])
+    if not candidates:
+        return {"add": [], "supersede": [], "noop": []}
+    if not _client or not existing:
+        return {"add": candidates, "supersede": [], "noop": []}
+
+    # 只挑「跟候選語意相近」的既有記憶當對帳對象，控 token（不是整包塞）
+    relevant = {}
+    for cand in candidates:
+        for it in retrieve(cand.get("content", ""), existing, limit=5):
+            if it.get("id"):
+                relevant.setdefault(it["id"], it)
+    if not relevant:
+        return {"add": candidates, "supersede": [], "noop": []}
+
+    cand_txt = "\n".join(f"[{i}] ({c.get('type')}) {c.get('content')}" for i, c in enumerate(candidates))
+    exist_txt = "\n".join(
+        f"- id={it.get('id')} ({it.get('type')}) {it.get('content')}" for it in relevant.values()
+    )
+    prompt = f"新萃取的候選事實：\n{cand_txt}\n\n既有記憶：\n{exist_txt}"
+    try:
+        r = _client.models.generate_content(
+            model=MODEL,
+            contents=[types.Content(role="user", parts=[types.Part(text=prompt)])],
+            config=types.GenerateContentConfig(
+                system_instruction=_RECONCILE_SYS, temperature=0.1, response_mime_type="application/json"
+            ),
+        )
+        decisions = (json.loads(r.text) or {}).get("decisions", [])
+    except Exception:
+        return {"add": candidates, "supersede": [], "noop": []}
+
+    add, supersede, noop = [], [], []
+    handled = set()
+    valid_ids = set(relevant.keys())
+    for d in decisions if isinstance(decisions, list) else []:
+        try:
+            i = int(d.get("i"))
+        except (TypeError, ValueError):
+            continue
+        if i < 0 or i >= len(candidates) or i in handled:
+            continue
+        action = (d.get("action") or "ADD").upper()
+        target = d.get("targetId") or ""
+        if action == "SUPERSEDE" and target in valid_ids:
+            supersede.append({"new": candidates[i], "oldId": target})
+        elif action == "NOOP":
+            noop.append(candidates[i])
+        else:
+            add.append(candidates[i])
+        handled.add(i)
+    # 沒被 LLM 提到的候選 → 保底當 ADD（絕不因對帳失誤而漏記）
+    for i, c in enumerate(candidates):
+        if i not in handled:
+            add.append(c)
+    return {"add": add, "supersede": supersede, "noop": noop}
 
 
 def consolidate(items, sim_threshold=0.9):

@@ -47,6 +47,13 @@
 > 2. **整理員** `memory_engine.consolidate` + `server.consolidate_memory` → 合併重複／剪低價值；Supabase 用**軟刪除**（`supabase_adapter.soft_delete_memory_items` PATCH `deleted_at`，可還原），本機 JSON 重寫。端點 `POST /admin/memory-consolidate`（admin-gated）。
 > 3. **活的側寫** `memory_engine.build_living_profile` + `server.refresh_living_profile`（存 `engine/living_profile.json`，已加 .gitignore）→ 已注入 `build_reply_context` / `reply_context_instruction`，寧寧講話會帶「這位長輩現在是誰」。端點 `POST /admin/memory-living-profile`（admin-gated）。
 > **我這輪動到**：`server.py`（`build_reply_context`、`reply_context_instruction`、memory 端點、`load/save/refresh_living_profile`）、`supabase_adapter.py`（新增 `soft_delete_memory_items`）、`memory_engine.py`。整理員／側寫兩個維護端點目前設計為「背景定期呼叫」，頻率旋鈕（每天/每週）待 Edward 拍板。**你若要碰 `reply_context` 或 memory 端點先喊一聲。**
+>
+> 💬 **城堡 → Codex（2026-07-02 · 記憶對帳 B1 已上）**：補完記憶最痛缺口「寫入即對帳」（借鏡 Mem0 的 ADD/UPDATE/DELETE，但只填我們自己 schema 的 `supersedes_memory_id`）：
+> 1. **`memory_engine.reconcile(candidates, existing)`** → 每條新候選判 新增／已知不動／取代過時的；抓不準時保底 ADD、絕不漏記。
+> 2. **`server._post_turn_extract`** 改為「先對帳再存」（不再無腦 append）；被取代的舊記憶走 **`server._invalidate_memory_items`**（Supabase 軟刪除 / JSON 移除）下架、不再召回。新記憶帶 `supersedesMemoryId` 指向舊條。
+> 3. **記憶驗收測試** `engine/memory_acceptance_test.py`（11 條標準、實跑引擎）→ **11/11 全過**；驗證：搬家/女兒改名 → 舊事實下架、新事實生效、不自打嘴巴。
+> 4. `memory_engine.extract` 加重試（萃取偶發失敗不再默默丟掉整輪記憶）。
+> 完整評估：`docs/城堡評估-記憶與感知-2026-07-02.md`。**感知層經稽核僅約 13%（孤兒 snapshot 未接回話＋假天氣寫死），是下一主戰場**——Codex 若要動感知（時間/天氣/CWA/snapshot 接回 `build_reply_context`）先在此喊一聲、避免撞。
 
 ---
 

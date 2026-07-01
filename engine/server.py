@@ -373,6 +373,26 @@ def refresh_living_profile(person_id=None):
             "profile": profile, "basedOnMemories": len(items)}
 
 
+def _invalidate_memory_items(ids):
+    """把被取代的舊記憶下架：Supabase 用軟刪除（deleted_at，可還原），本機 JSON 直接移除。
+    下架後就不再被召回，寧寧回話用當下版本、不吐過時事實。"""
+    ids = [i for i in (ids or []) if i]
+    if not ids:
+        return
+    backend = data_backend()
+    if backend.enabled():
+        try:
+            backend.soft_delete_memory_items(ids, utc_now())
+            return
+        except Exception as e:
+            if backend.enabled():
+                raise e
+            log_fallback_exception("invalidate superseded memory (supabase)", e)
+    remove = set(ids)
+    kept = [it for it in load_memory_items(limit=1000) if it.get("id") not in remove]
+    save_memory_items(kept)
+
+
 def normalize_perception_snapshot(data):
     data = data or {}
     return {
@@ -2081,16 +2101,39 @@ def _post_turn_extract(history, person_id, store=True):
     if not candidates:
         candidates = (model_router.memory_extract_response({"history": history}) or {}).get("candidates") or []
     stored_items = []
+    superseded = 0
     if store and candidates:
-        new_items = [model_router.normalize_memory_item(c, person_id) for c in candidates]
-        for item, cand in zip(new_items, candidates):
+        # 寫入即對帳：新事實跟既有記憶比對 → 新增 / 已知不動 / 取代過時的（不再無腦堆）
+        existing = load_memory_items(limit=1000)
+        try:
+            plan = memory_engine.reconcile(candidates, existing)
+        except Exception:
+            plan = {"add": list(candidates), "supersede": [], "noop": []}
+
+        def _norm(cand):
+            item = model_router.normalize_memory_item(cand, person_id)
             if cand.get("tier"):
                 item["tier"] = cand["tier"]
-        stored_items = append_memory_items(new_items)
+            return item
+
+        to_store, superseded_ids = [], []
+        for cand in plan.get("add", []):
+            to_store.append(_norm(cand))
+        for pair in plan.get("supersede", []):
+            item = _norm(pair["new"])
+            item["supersedesMemoryId"] = pair["oldId"]  # 新的指向它取代的舊記憶
+            to_store.append(item)
+            superseded_ids.append(pair["oldId"])
+        if to_store:
+            stored_items = append_memory_items(to_store)
+        if superseded_ids:
+            _invalidate_memory_items(superseded_ids)  # 舊的下架、不再被召回（保住『不抱過時的你』）
+            superseded = len(superseded_ids)
     return {
         "candidates": candidates,
         "memoryItems": stored_items,
         "stored": len(stored_items),
+        "superseded": superseded,
         "extractor": extractor,
         "storagePolicy": {
             "storeRawTranscriptByDefault": False,
