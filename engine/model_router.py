@@ -610,10 +610,35 @@ def guardian_evaluate_response(data):
     level = "none"
     action = "allow"
 
-    critical_terms = ["want to die", "kill myself", "suicide", "hurt myself", "self harm"]
-    emergency_terms = ["chest pain", "cannot breathe", "fainted", "fell and cannot get up", "stroke", "heart attack"]
-    medical_terms = ["diagnose", "prescribe", "dosage", "stop medication", "treatment"]
-    distress_terms = ["lonely", "sad", "anxious", "insomnia", "afraid", "panic", "depressed"]
+    # 危機/安全詞庫 — 中文（台灣）優先 + 英文。substring 比對，中文不受 .lower() 影響。
+    # 定性：非醫療、危機=轉介者（家人/1925/119）。安全網優先於零誤報：寧可多關心一次、不可漏接一次。
+    critical_terms = [
+        "want to die", "kill myself", "suicide", "hurt myself", "self harm", "end my life",
+        "不想活", "不想活了", "不想再活", "想死", "想去死", "死了算了", "不如死", "活不下去",
+        "活著沒意思", "活著沒意義", "活著幹嘛", "撐不下去", "撐不住了",
+        "自殺", "自殘", "傷害自己", "結束生命", "結束自己", "了結生命", "一了百了", "解脫算了",
+        "沒有我比較好", "不想拖累",
+    ]
+    emergency_terms = [
+        "chest pain", "cannot breathe", "can't breathe", "fainted", "fell and cannot get up",
+        "stroke", "heart attack", "bleeding a lot", "unconscious",
+        "胸痛", "胸口痛", "胸口悶", "胸口好悶", "胸口很悶", "胸悶",
+        "喘不過氣", "喘不上氣", "很喘", "會喘", "一直喘", "喘得厲害", "呼吸困難", "吸不到氣",
+        "昏倒", "暈倒", "昏過去", "叫不醒", "沒有意識", "意識不清",
+        "中風", "心臟病發", "心肌梗塞", "嘴歪", "半邊不能動", "手腳無力", "講不出話",
+        "流血不止", "大量出血", "抽搐", "痙攣", "爬不起來", "站不起來",
+    ]
+    medical_terms = [
+        "diagnose", "prescribe", "dosage", "stop medication", "treatment",
+        "診斷", "確診", "開藥", "處方", "劑量", "停藥", "該吃什麼藥",
+        "要不要吃藥", "改藥", "換藥", "能不能治", "怎麼治療",
+    ]
+    distress_terms = [
+        "lonely", "sad", "anxious", "insomnia", "afraid", "panic", "depressed",
+        "孤單", "寂寞", "沒人陪", "沒人理", "難過", "傷心", "想哭",
+        "焦慮", "睡不著", "失眠", "害怕", "恐慌", "憂鬱", "心情不好",
+        "心情很差", "提不起勁", "沒精神", "好累", "覺得好累",
+    ]
 
     lowered = text.lower()
     if any(k in lowered for k in critical_terms):
