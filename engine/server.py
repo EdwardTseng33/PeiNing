@@ -9,12 +9,12 @@
   POST /companion-profile    → 讀寫陪伴角色 templateId/displayName
 用法：GEMINI_API_KEY="..." py server.py  → 瀏覽器開 http://localhost:8200
 """
-import os, sys, json, base64, io, wave, time, posixpath
+import os, sys, json, base64, io, wave, time, posixpath, threading
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 import uuid
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from env_loader import load_engine_env
 load_engine_env()
 import chat_engine as eng
@@ -76,6 +76,7 @@ COMPANION_ALIASES = {
     "cat": "munea-2d-mimi",
     "dog": "munea-2d-wangcai",
 }
+JSON_STORE_LOCK = threading.RLock()
 
 
 def normalize_template_id(template_id):
@@ -224,23 +225,24 @@ def read_json_file(path, fallback=None):
 
 
 def write_json_file(path, data):
-    directory = os.path.dirname(os.path.abspath(path))
-    if directory:
-        os.makedirs(directory, exist_ok=True)
-    tmp_path = f"{path}.tmp.{os.getpid()}.{int(time.time() * 1000)}"
-    try:
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-            f.write("\n")
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_path, path)
-    finally:
-        if os.path.exists(tmp_path):
-            try:
-                os.remove(tmp_path)
-            except OSError:
-                pass
+    with JSON_STORE_LOCK:
+        directory = os.path.dirname(os.path.abspath(path))
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+        tmp_path = f"{path}.tmp.{os.getpid()}.{threading.get_ident()}.{int(time.time() * 1000)}"
+        try:
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+                f.write("\n")
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, path)
+        finally:
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass
 
 
 def data_backend():
@@ -2026,6 +2028,7 @@ class H(BaseHTTPRequestHandler):
                 "ok": True,
                 "service": "munea-local-engine",
                 "time": utc_now(),
+                "runtime": {"concurrency": "threading", "jsonStoreWrites": "atomic"},
                 "contracts": ["auth-status", "account-bootstrap", "app-profile", "companion-profile", "persona-context", "entitlements", "credits-balance", "credits-grant", "credits-consume", "voice-session", "avatar-session", "ai-brain-status", "memory-extract", "memory-retrieve", "butler-post-turn", "guardian-evaluate", "perception-topic-plan", "perception-snapshot", "product-event", "admin-north-star", "admin-usage", "admin-credits", "privacy-export", "account-deletion"],
                 "backend": data_backend_status(),
             })
@@ -2132,4 +2135,4 @@ class H(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     print("沐寧 App 伺服器啟動 → http://localhost:8200  （Ctrl+C 結束）")
-    HTTPServer(("127.0.0.1", 8200), H).serve_forever()
+    ThreadingHTTPServer(("127.0.0.1", 8200), H).serve_forever()

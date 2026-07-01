@@ -1626,6 +1626,8 @@ Pass "/credits endpoints return wallet contracts"
 Step "API /healthz"
 $health = Invoke-RestMethod -Uri "$BaseUrl/healthz" -Method Get -TimeoutSec 30
 if (-not $health.ok) { throw "/healthz returned not ok" }
+if ($health.runtime.concurrency -ne "threading") { throw "/healthz missing threaded runtime marker" }
+if ($health.runtime.jsonStoreWrites -ne "atomic") { throw "/healthz missing atomic JSON write marker" }
 if ($health.contracts -notcontains "auth-status") { throw "/healthz missing auth-status contract" }
 if ($health.contracts -notcontains "account-bootstrap") { throw "/healthz missing account-bootstrap contract" }
 if ($health.contracts -notcontains "entitlements") { throw "/healthz missing entitlements contract" }

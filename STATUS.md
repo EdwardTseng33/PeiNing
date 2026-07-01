@@ -16,6 +16,15 @@
 - Local JSON fallback writes now use a temporary file, flush/fsync, and `os.replace()` so an interrupted write is less likely to corrupt profile, billing, credits, privacy, memory, or analytics fallback stores.
 - Added smoke coverage for atomic JSON writes; it should be run in a Python-enabled environment.
 
+## 2026-07-01 Update - Threaded local engine
+
+**Status:** completed for the local prototype engine.
+
+- Started P0-8 from `docs/健檢修復排程-2026-07-01.md`.
+- Local engine startup now uses `ThreadingHTTPServer` so one slow local request is less likely to block the entire prototype.
+- Added an in-process JSON store write lock around atomic fallback writes so threaded local requests do not write fallback JSON files at the same time.
+- `/healthz` now reports `runtime.concurrency = threading` and `runtime.jsonStoreWrites = atomic`.
+
 ## 2026-07-01 Update - Dual-AI collaboration board aligned
 
 **Status:** completed and ready for GitHub sync.
