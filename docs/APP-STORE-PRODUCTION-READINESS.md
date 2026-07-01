@@ -1,6 +1,6 @@
 # Munea App Store Production Readiness
 
-Updated: 2026-07-01
+Updated: 2026-07-02
 
 Purpose: turn Munea from prototype into an App Store product with subscriptions, health-care boundaries, user data safety, and maintainable backend contracts.
 
@@ -227,6 +227,7 @@ Before TestFlight:
 - `supabase/sql/006_billing_credits_foundation.sql` reviewed/applied if credits will appear in TestFlight.
 - privacy policy draft complete.
 - account deletion and data export requirements written.
+- Mac handoff checklist completed or actively in progress: `docs/TESTFLIGHT-MAC-HANDOFF-2026-07-02.md`.
 
 Before App Review:
 
@@ -247,3 +248,17 @@ Before public launch:
 - crash and error monitoring installed.
 - delete/export request path ready.
 - safety escalation copy reviewed.
+
+## Current TestFlight Readiness - 2026-07-02
+
+Munea is not ready for TestFlight upload yet, but the next practical gate is now clear because Xcode and Apple Developer Program access are available on Edward's Mac.
+
+Recommended order:
+
+1. Generate or sync the Capacitor iOS project on Mac.
+2. Add required iOS purpose strings for microphone, speech recognition, and notifications.
+3. Run on a real iPhone and verify bundled web shell, `聊聊`, microphone prompt, voice-note fallback, playback, and privacy link.
+4. Decide whether the first TestFlight build is a static UI shell QA build or a staging-backend build.
+5. Only after that, prepare App Store Connect metadata, support URL, privacy URL, subscriptions, and reviewer notes.
+
+The detailed Mac-side handoff lives in `docs/TESTFLIGHT-MAC-HANDOFF-2026-07-02.md`.

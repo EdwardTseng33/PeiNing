@@ -1,6 +1,6 @@
 # Munea Mobile Voice Bridge
 
-> Updated: 2026-06-29
+> Updated: 2026-07-02
 > Scope: first microphone bridge for the iOS-first app path.
 
 ## Current Decision
@@ -53,7 +53,9 @@ The app should not depend only on browser speech recognition, because iOS / WKWe
 
 ## Next Device Test
 
-On macOS with Xcode:
+On macOS with Xcode, use the full handoff checklist in `docs/TESTFLIGHT-MAC-HANDOFF-2026-07-02.md`.
+
+Minimum path:
 
 1. Run `npm install`.
 2. Run `npm run cap:add:ios`.
@@ -73,6 +75,8 @@ On macOS with Xcode:
 ```powershell
 npm run smoke
 ```
+
+Report the Mac result back with Xcode version, iPhone model / iOS version, microphone prompt result, recording result, playback result, and any signing error text.
 
 ## Next Engineering Step
 

@@ -1,5 +1,14 @@
 # 沐寧 Munea · STATUS（接力檔）
 
+## 2026-07-02 Update - TestFlight Mac handoff
+
+**Status:** completed for iOS/TestFlight planning without touching Claude/城堡's memory lane.
+
+- Added `docs/TESTFLIGHT-MAC-HANDOFF-2026-07-02.md` for the Mac/Xcode/iPhone handoff now that Xcode is installed and the Apple Developer Program is active.
+- The handoff covers Capacitor commands, Xcode signing, required iOS purpose strings, real-iPhone smoke QA, App Store Connect prep, TestFlight build gate, and App Review notes draft.
+- Updated App Store readiness, mobile voice bridge, and the current development plan so the next iOS gate is explicit.
+- Avoided `engine/server.py`, `engine/memory_engine.py`, `engine/chat_engine.py`, `supabase/sql/`, and realtime voice files while Claude/城堡 continues memory-layer work.
+
 ## 2026-07-02 Update - Backend fallback logging
 
 **Status:** completed for P1-13 debug visibility.
