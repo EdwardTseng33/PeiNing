@@ -2052,6 +2052,39 @@ def _post_turn_extract(history, person_id, store=True):
     }
 
 
+def consolidate_memory(person_id=None):
+    """整理員：載入全部記憶 → 合併重複／剪低價值 → 存回（Supabase 用軟刪除、本機 JSON 重寫）。
+    設計為由背景／管理端『定期』呼叫（頻率旋鈕待 Edward 拍板：每天/每週）。"""
+    items = load_memory_items(limit=1000)
+    if not items:
+        return {"ok": True, "brain": "butler", "action": "consolidate",
+                "report": {"before": 0, "after": 0, "prunedLowValue": 0, "mergedDuplicates": 0},
+                "removed": 0, "persisted": "none"}
+    try:
+        import memory_engine
+        kept, report = memory_engine.consolidate(items)
+    except Exception as e:
+        log_fallback_exception("consolidate memory", e)
+        return {"ok": False, "brain": "butler", "action": "consolidate", "error": "consolidate_failed"}
+    kept_ids = {it.get("id") for it in kept if it.get("id")}
+    removed_ids = [it.get("id") for it in items if it.get("id") and it.get("id") not in kept_ids]
+    persisted = "none"
+    backend = data_backend()
+    if backend.enabled():
+        if removed_ids:
+            try:
+                backend.soft_delete_memory_items(removed_ids, utc_now())
+                persisted = "supabase_soft_delete"
+            except Exception as e:
+                log_fallback_exception("soft delete consolidated memory", e)
+                persisted = "error"
+    else:
+        save_memory_items(kept)
+        persisted = "json_rewrite"
+    return {"ok": True, "brain": "butler", "action": "consolidate",
+            "report": report, "removed": len(removed_ids), "persisted": persisted}
+
+
 def butler_post_turn_response(data):
     data = data or {}
     history = data.get("history") or []
@@ -2249,6 +2282,12 @@ class H(BaseHTTPRequestHandler):
                 self._json(memory_retrieve_response(data))
             elif self.path == "/butler/post-turn":
                 self._json(butler_post_turn_response(data))
+            elif self.path == "/admin/memory-consolidate":
+                ok, code = admin_authorized(self.headers)
+                if not ok:
+                    self._json_error(403, code, "Admin token is required")
+                else:
+                    self._json(consolidate_memory(data.get("personId") or data.get("person_id")))
             elif self.path == "/guardian/evaluate":
                 self._json(guardian_evaluate_response(data))
             elif self.path == "/perception/topic-plan":

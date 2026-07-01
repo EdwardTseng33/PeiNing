@@ -139,6 +139,53 @@ def retrieve(query, items, limit=5):
     return out
 
 
+def consolidate(items, sim_threshold=0.9):
+    """整理員：① 剪掉低價值（一次性閒聊、低分）② 合併重複／語意近重複（同類、意思幾乎一樣，留較優的）。
+    回傳 (整理後清單, 報告)。之後由背景管家腦定期呼叫。"""
+    items = [dict(it) for it in (items or [])]
+
+    def keepscore(it):
+        return (float(it.get("importance", 0.5) or 0.5), float(it.get("confidence", 0.5) or 0.5))
+
+    pruned, kept = [], []
+    for it in items:
+        imp = float(it.get("importance", 0.5) or 0.5)
+        if it.get("type") == "temporary_event" and imp < 0.3:
+            pruned.append(it)
+        else:
+            kept.append(it)
+
+    kept.sort(key=keepscore, reverse=True)  # 較優的排前、優先保留
+    result, merged, vecs = [], [], {}
+    for it in kept:
+        content = it.get("content", "")
+        vec = _embed(content)
+        dup_of = None
+        for idx, r in enumerate(result):
+            if r.get("type") != it.get("type"):
+                continue
+            if content and content == r.get("content"):
+                dup_of = r
+                break
+            rv = vecs.get(idx)
+            if vec and rv and _cosine(vec, rv) >= sim_threshold:
+                dup_of = r
+                break
+        if dup_of is None:
+            vecs[len(result)] = vec
+            result.append(it)
+        else:
+            merged.append(it)
+
+    report = {
+        "before": len(items),
+        "after": len(result),
+        "prunedLowValue": len(pruned),
+        "mergedDuplicates": len(merged),
+    }
+    return result, report
+
+
 def migrate_profile(profile):
     """收斂：把舊的中文側寫 `user_profile`（稱呼/年紀/住在/喜好/回憶/興趣權重）
     轉成新記憶候選，之後併進 `memory_items`（單一來源）。"""

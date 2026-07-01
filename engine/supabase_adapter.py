@@ -571,6 +571,26 @@ class SupabaseAdapter:
         )
         return [self.memory_row_to_item(row) for row in rows]
 
+    def soft_delete_memory_items(self, item_ids, deleted_at):
+        """整理員用：把重複/低價值的記憶標記為隱藏（deleted_at），不真的抹掉、可還原。"""
+        if not self.enabled():
+            return None
+        ids = [str(i) for i in (item_ids or []) if i]
+        if not ids:
+            return []
+        id_list = ",".join(ids)
+        return self._request(
+            "PATCH",
+            "memory_items",
+            query={
+                "id": f"in.({id_list})",
+                "account_id": f"eq.{self.account_id}",
+                "select": "id",
+            },
+            payload={"deleted_at": deleted_at},
+            prefer="return=representation",
+        )
+
     def load_perception_snapshots(self, query=None, limit=100):
         if not self.enabled():
             return None
