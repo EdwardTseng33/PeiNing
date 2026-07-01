@@ -192,6 +192,31 @@ def test_guardian():
            f"風險={level}；動作={action}")
 
 
+# ---- 標準 12：近況優先 + 過期淡出（遺忘衰減）----
+def test_recency():
+    import datetime
+    now = datetime.datetime.now(datetime.timezone.utc)
+    ago = lambda d: (now - datetime.timedelta(days=d)).isoformat()
+    items = [
+        {"id": "old_tv", "type": "topic_interest", "tier": "recent", "content": "長輩最近喜歡看電視", "importance": 0.5, "createdAt": ago(40)},
+        {"id": "new_tv", "type": "topic_interest", "tier": "recent", "content": "長輩最近喜歡看電視", "importance": 0.5, "createdAt": ago(0)},
+    ]
+    res = me.retrieve("長輩最近喜歡做什麼", items, limit=2)
+    newer_first = res and res[0].get("id") == "new_tv"
+    record("12a", "近況優先（新的先浮出）", "PASS" if newer_first else "FAIL",
+           "同樣相關時、較新的近況排前" if newer_first else "近況沒被優先")
+
+    decay = [
+        {"id": "t_old", "type": "temporary_event", "tier": "today", "content": "今天天氣陰陰的", "importance": 0.4, "createdAt": ago(3)},
+        {"id": "core_keep", "type": "identity", "tier": "core", "content": "長輩叫陳秀英", "importance": 0.95, "createdAt": ago(200)},
+    ]
+    kept, rep = me.consolidate(decay)
+    forgot = all(k.get("id") != "t_old" for k in kept)
+    kept_core = any(k.get("id") == "core_keep" for k in kept)
+    record("12b", "過期淡出、核心留著", "PASS" if (forgot and kept_core) else "PARTIAL",
+           f"3 天前當天閒事淡出={'✓' if forgot else '✗'}；永久核心留著={'✓' if kept_core else '✗'}")
+
+
 def main():
     print("=" * 68)
     print(" 沐寧『會記憶的腦』記憶驗收測試（AI 健康陪聊）")
@@ -204,6 +229,7 @@ def main():
     test_supersede()
     test_sensitivity()
     test_guardian()
+    test_recency()
 
     print()
     icon = {"PASS": "✅", "PARTIAL": "🟡", "FAIL": "🔴"}

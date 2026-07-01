@@ -11,6 +11,7 @@
 import os
 import json
 import math
+import datetime
 
 from google import genai
 from google.genai import types
@@ -120,12 +121,26 @@ def _cosine(a, b):
     return dot / (na * nb) if na and nb else 0.0
 
 
+def _age_days(ts, now):
+    """一筆記憶距今幾天（沒有時間戳就回 None）。"""
+    if not ts:
+        return None
+    try:
+        t = datetime.datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        if t.tzinfo is None:
+            t = t.replace(tzinfo=datetime.timezone.utc)
+        return max(0.0, (now - t).total_seconds() / 86400.0)
+    except Exception:
+        return None
+
+
 def retrieve(query, items, limit=5):
     """語意召回：用「意思」找回相關記憶（本機版，之後一鍵換 pgvector）。
     分數 = 語意相似度 × 重要性加權。回傳 top-K，含 _score/_sim 供驗證。"""
     qv = _embed(query, task_type="RETRIEVAL_QUERY")
     if qv is None:
         return []
+    now = datetime.datetime.now(datetime.timezone.utc)
     scored = []
     for it in items or []:
         vec = _embed(it.get("content"))
@@ -133,7 +148,14 @@ def retrieve(query, items, limit=5):
             continue
         sim = _cosine(qv, vec)
         imp = float(it.get("importance", 0.5) or 0.5)
-        scored.append((sim + 0.05 * imp, sim, it))  # 以語意相似度為主、重要性只做微幅加權
+        rec = 0.0
+        # 近況/當天：越新分越高（兩週尺度）。永久核心（core/long）不受時間影響、不因年久被埋。
+        if it.get("tier") in ("recent", "today"):
+            age = _age_days(it.get("updatedAt") or it.get("createdAt"), now)
+            if age is not None:
+                rec = math.exp(-age / 14.0)
+        score = sim + 0.05 * imp + 0.05 * rec  # 以語意為主；重要性、近況各只做微幅加權
+        scored.append((score, sim, it))
     scored.sort(key=lambda x: x[0], reverse=True)
     out = []
     for score, sim, it in scored[:limit]:
@@ -228,10 +250,24 @@ def consolidate(items, sim_threshold=0.9):
     def keepscore(it):
         return (float(it.get("importance", 0.5) or 0.5), float(it.get("confidence", 0.5) or 0.5))
 
+    now = datetime.datetime.now(datetime.timezone.utc)
     pruned, kept = [], []
     for it in items:
         imp = float(it.get("importance", 0.5) or 0.5)
-        if it.get("type") == "temporary_event" and imp < 0.3:
+        age = _age_days(it.get("updatedAt") or it.get("createdAt"), now)
+        expired = False
+        if age is not None:
+            vd = it.get("validDays")
+            if vd:  # 明訂壽命的、過期就忘
+                try:
+                    expired = age > float(vd)
+                except (TypeError, ValueError):
+                    expired = False
+            elif it.get("tier") == "today" and age > 2:  # 當天狀態：隔天就該淡出
+                expired = True
+            elif it.get("type") == "temporary_event" and age > 14 and imp < 0.5:  # 兩週前的一次性閒事、又不重要
+                expired = True
+        if expired or (it.get("type") == "temporary_event" and imp < 0.3):
             pruned.append(it)
         else:
             kept.append(it)
