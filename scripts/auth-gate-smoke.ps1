@@ -5,6 +5,8 @@ param(
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
+$env:PYTHONUTF8 = "1"
+$env:PYTHONIOENCODING = "utf-8"
 
 function Resolve-Python {
   $venvPython = Join-Path $root ".venv\Scripts\python.exe"
@@ -123,6 +125,16 @@ try {
     } catch {}
   }
   if (-not $ready) {
+    if (Test-Path $stdout) {
+      Write-Host ""
+      Write-Host "== Engine stdout ==" -ForegroundColor Yellow
+      Get-Content -LiteralPath $stdout -Tail 80
+    }
+    if (Test-Path $stderr) {
+      Write-Host ""
+      Write-Host "== Engine stderr ==" -ForegroundColor Yellow
+      Get-Content -LiteralPath $stderr -Tail 120
+    }
     throw "Auth-required engine did not become ready on $BaseUrl"
   }
   Pass "Auth-required engine started"

@@ -6,6 +6,8 @@ param(
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
+$env:PYTHONUTF8 = "1"
+$env:PYTHONIOENCODING = "utf-8"
 
 function Resolve-Python {
   $venvPython = Join-Path $root ".venv\Scripts\python.exe"
