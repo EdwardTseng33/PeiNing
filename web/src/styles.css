@@ -817,3 +817,8 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 /* ===== 寧寧呼吸感（首頁小生命） ===== */
 .bc-avatar img { animation: breathe 4.2s ease-in-out infinite; transform-origin: center; }
 @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+
+/* 登入視窗 · 信箱段說明（原本孤零零一排、長輩看不懂） */
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0 8px; color: var(--muted); font-size: 13px; }
+.auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.auth-email-hint { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin: 0 0 10px; }
