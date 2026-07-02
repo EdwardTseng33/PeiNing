@@ -42,7 +42,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .status-bar .sb-icons .ic { width: 17px; height: 17px; stroke-width: 2.2; }
 .status-bar.on-dark { color: #fff; }
 
-.screen { display: none; height: 100%; overflow-y: auto; padding-top: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 6px); padding-bottom: calc(114px + env(safe-area-inset-bottom)); }
+.screen { display: none; height: 100%; overflow-y: auto; padding-top: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 6px); padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 .screen.active { display: block; animation: fade .35s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
 .pad { padding: 4px 20px 16px; }
@@ -535,8 +535,8 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  object-position: center 42%;
+  object-fit: cover;
+  object-position: center top;
   display: block;
   /* §6.5 第 2 層降級：靜態圖 + CSS 呼吸（極輕微縮放，像活著、不恐怖谷） */
   animation: faceBreath 5.2s ease-in-out infinite;
@@ -586,7 +586,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
   font-size: 12.5px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ===== 狀態指示層（依 data-state 顯示其一）===== */
-.face-cue { position: absolute; left: 0; right: 0; z-index: 6; bottom: 230px;
+.face-cue { position: absolute; left: 0; right: 0; z-index: 6; bottom: 204px;
   display: flex; justify-content: center; pointer-events: none; min-height: 30px; }
 .face-cue .cue { display: none; align-items: center; gap: 7px;
   background: rgba(0,0,0,.36); backdrop-filter: blur(8px); border-radius: 999px; padding: 10px 18px; }
@@ -656,40 +656,27 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .face-end .ic { width: 26px; height: 26px; color: #fff; }
 
 /* 全屏臉時隱藏底部分頁（沉浸、像通話中）—— showView 已加 .hidden，這裡兜底 */
-.face-screen ~ .tab-bar,
-#chat.active ~ .tab-bar { }
+#chat.active ~ .tab-bar { display: none; }
 
-/* 小螢幕（375 以下）等比縮，狀態提示與鈕不擠 */
-@media (max-height: 720px) {
-  .face-bg img { object-position: center 24%; }
-  .face-caption { bottom: 126px; font-size: 14px; padding: 9px 13px; }
-  .face-cue { bottom: 206px; }
-  .face-mic { width: 70px; height: 70px; }
-  .face-end { min-height: 60px; font-size: 20px; }
-}
-
-/* 底部導覽：固定在 App 視窗底部，不跟內容一起滾走 */
 .tab-bar {
   position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 20;
-  padding: 8px 10px;
+  padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
-  gap: 2px;
-  background: rgba(255,255,255,.96);
-  border: 1px solid var(--line);
-  border-radius: 100px;
-  box-shadow: 0 18px 40px -22px rgba(31,60,52,.35);
-  backdrop-filter: blur(10px);
+  background: #FFFFFF;
+  border-top: 1px solid var(--line);
+  border-radius: 26px 26px 0 0;
+  box-shadow: 0 -10px 30px -24px rgba(31,60,52,.35);
 }
 .tab-bar.hidden { display: none; }
 .tab-btn {
   min-width: 0;
-  min-height: 52px;
+  min-height: 56px;
   border: none;
   background: transparent;
   color: var(--muted);
@@ -698,32 +685,30 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
   align-items: center;
   justify-content: center;
   gap: 3px;
-  padding: 6px 0;
-  border-radius: 100px;
+  padding: 4px 0 8px;
+  position: relative;
   font-family: var(--sans);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  transition: background .18s ease, color .18s ease, transform .12s ease;
+  transition: color .18s ease, transform .12s ease;
 }
-.tab-btn .ic { width: 23px; height: 23px; }
-.tab-btn.active { color: var(--teal-dd); background: var(--mint); }
-.tab-btn.center { transform: translateY(-24px); }
+.tab-btn .ic { width: 24px; height: 24px; }
+.tab-btn.active { color: var(--teal-dd); font-weight: 700; }
+.tab-btn.active::after { content: ""; position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--coral-d); }
+.tab-btn.center { transform: translateY(-8px); }
 .tab-btn.center .center-fab {
-  width: 62px;
-  height: 62px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   color: #fff;
   background: var(--teal-d);
-  border: 5px solid #FFFFFF;
-  box-shadow: 0 14px 26px -12px rgba(46,138,131,.55);
+  box-shadow: 0 8px 18px -8px rgba(46,138,131,.5);
 }
 .tab-btn.center:active .center-fab { transform: scale(.94); }
 .tab-btn.center.active .center-fab { background: var(--teal-dd); }
-.tab-btn.center { background: transparent; }
-.tab-btn.center .center-fab .ic { width: 28px; height: 28px; }
 
 
 /* 字首暖色頭像（取代素材照 · UIUX 重設計 2026-07-02） */
@@ -770,7 +755,7 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 .pv-back .ic { width: 20px; height: 20px; }
 
 /* 6) 視覺提示吐司（取代只用唸的回饋） */
-.toast { position: absolute; left: 50%; bottom: calc(128px + env(safe-area-inset-bottom));
+.toast { position: absolute; left: 50%; bottom: calc(112px + env(safe-area-inset-bottom));
   transform: translateX(-50%) translateY(16px); background: var(--ink); color: #FFF;
   font-size: 14.5px; line-height: 1.5; padding: 12px 18px; border-radius: 100px;
   max-width: 82%; text-align: center; opacity: 0; pointer-events: none;
@@ -845,7 +830,7 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 
 /* 捲動邊緣淡出（Apple 2026 scroll-edge 的不透明版） */
 .app-shell::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top, 0px) + 18px); background: linear-gradient(to bottom, var(--cream) 30%, transparent); pointer-events: none; z-index: 15; }
-.app-shell::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: calc(env(safe-area-inset-bottom, 0px) + 96px); background: linear-gradient(to top, var(--cream) 12%, transparent 60%); pointer-events: none; z-index: 15; }
+.app-shell::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: calc(env(safe-area-inset-bottom, 0px) + 92px); background: linear-gradient(to top, var(--cream) 8%, transparent 55%); pointer-events: none; z-index: 15; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
@@ -920,3 +905,6 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 .mood-month b { display: block; width: 100%; aspect-ratio: 1; border-radius: 50%; }
 .mood-legend { display: flex; flex-wrap: wrap; gap: 10px 14px; font-size: 13px; color: var(--muted); }
 .mood-legend i { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-style: normal; font-size: 12px; margin-right: 4px; vertical-align: -6px; }
+
+/* 首頁寧寧頭像：頭靠上緣（Edward 拍板） */
+.bc-avatar img, .bc-avatar .ava-img { object-position: center 8% !important; }
