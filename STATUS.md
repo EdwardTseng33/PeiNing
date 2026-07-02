@@ -1,5 +1,14 @@
 # 沐寧 Munea · STATUS（接力檔）
 
+## 2026-07-02 Update - Smoke workflow concurrency and action runtime cleanup
+
+**Status:** completed for CI notification hygiene.
+
+- Added GitHub Actions concurrency to the Smoke workflow so newer pushes on the same branch cancel older in-progress Smoke runs.
+- Updated core workflow actions to their Node 24-compatible major versions: checkout v5, setup-node v5, and setup-python v6.
+- This reduces intermediate-run noise during rapid Claude/Codex push rounds and clears the Node.js 20 deprecation warnings shown in Actions annotations.
+- Avoided `web/`, `supabase/sql/`, memory internals, perception internals, realtime voice files, and backend behavior changes.
+
 ## 2026-07-02 Update - Clean no-api smoke isolation
 
 **Status:** completed for local verification stability.
