@@ -1774,7 +1774,8 @@ import re
 html = Path("web/index.html").read_text(encoding="utf-8")
 js = Path("web/src/app.js").read_text(encoding="utf-8")
 ids = set(re.findall(r'id="([^"]+)"', html))
-refs = set(re.findall(r"#([A-Za-z_][\w-]*)", js))
+raw_refs = set(re.findall(r"#([A-Za-z_][\w-]*)", js))
+refs = {r for r in raw_refs if not re.fullmatch(r"[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?(?:[0-9A-Fa-f]{2})?", r)}
 allowed = {"chat", "connect", "med"}
 missing = sorted([r for r in refs if r not in ids and r not in allowed])
 if missing:
