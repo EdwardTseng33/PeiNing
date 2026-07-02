@@ -57,7 +57,9 @@
   function normalizeProfile(profile) {
     const templateId = normalizeTemplateId(profile && profile.templateId);
     const t = templateFor(templateId);
-    const displayName = ((profile && profile.displayName) || t.defaultName).trim().slice(0, 12) || t.defaultName;
+    let rawName = ((profile && profile.displayName) || t.defaultName).trim();
+    if (/^munea$/i.test(rawName) || rawName === '沐寧') rawName = t.defaultName; // 品牌名不當人名（舊示範資料清理）
+    const displayName = rawName.slice(0, 12) || t.defaultName;
     return {
       templateId,
       displayName,
