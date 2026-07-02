@@ -1,5 +1,14 @@
 # 沐寧 Munea · STATUS（接力檔）
 
+## 2026-07-02 Update - Release check bundle
+
+**Status:** completed for release hygiene.
+
+- Added `scripts/release-check.ps1` and `npm run release:check`.
+- The release check skips local private `engine/.env.local`, runs static smoke, runs auth-gate smoke on a separate local port, and runs Supabase doctor.
+- Updated `docs/PRODUCTION-INFRA-READINESS-2026-07-02.md` so the recommended pre-release verification path is one command.
+- Avoided `web/`, `supabase/sql/`, memory logic, perception logic, and realtime voice files.
+
 ## 2026-07-02 Update - CI auth-gate smoke
 
 **Status:** completed for production authorization verification.

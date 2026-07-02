@@ -32,7 +32,7 @@
 | 誰 | 在做什麼 | 預計動到哪些檔 | 開始時間 | 狀態 |
 |---|---|---|---|---|
 | Claude / 城堡 | ✅ 記憶 100%＋感知 ~95%＋**心情圖譜 v2 已入引擎**（六類：開心/愉快/平穩/疲累/低落/煩躁；每聊一筆、日總結 mixed 小點、點日展開明細、moodMap 色回傳 App）→ ✅ 家人帳號連動設計＋UIUX 重設計定案（munea.net 錨）＋遊戲系統設計落檔 → **下一步：App 全面換裝實作（web/ 由城堡認領）＋家人帳號 P0（等 Codex 對齊 007 欄位）** | `engine/perception_engine.py`（MOOD_CATEGORIES/_MOOD_SYS 六類）、`engine/server.py`（wellbeing_trend 六類/mixed/signals）；**將動 `web/`（index/styles 全面換裝、照 UIUX 定案）** | 2026-07-02 | 🔄 進行中 |
-| Codex | CI 權限門補強：把正式模式 user/admin/provider 權限驗證加入 GitHub Actions，並讓 auth smoke 可避開本機 8200 佔用 | `.github/workflows/smoke.yml`、`scripts/auth-gate-smoke.ps1`、`engine/server.py`、`docs/PRODUCTION-INFRA-READINESS-2026-07-02.md`、`STATUS.md` | 2026-07-02 | ✅ 完成 |
+| Codex | Release check 一鍵化：把靜態 smoke、正式權限門、Supabase doctor 包成推版前一鍵檢查 | `scripts/release-check.ps1`、`package.json`、`docs/PRODUCTION-INFRA-READINESS-2026-07-02.md`、`STATUS.md` | 2026-07-02 | ✅ 完成 |
 
 > 📋 **開發排程**見 [健檢修復排程-2026-07-01](健檢修復排程-2026-07-01.md)（健檢三方發現的問題已排 P0/P1/核心＋認領欄）。**認領前先看、避免重複。**
 >
@@ -138,4 +138,10 @@
 
 - 本輪範圍：GitHub Actions 新增 `auth-gate` job，正式模式自動驗證 user bearer、admin token、provider webhook token 的權限邊界。
 - 補 `MUNEA_PORT` 支援，讓 `scripts/auth-gate-smoke.ps1 -BaseUrl http://127.0.0.1:8211` 可避開本機 8200 佔用，不需要停掉正在跑的預覽 server。
+- 避讓範圍：未改 `web/`、`supabase/sql/`、`engine/perception_engine.py`、`engine/memory_engine.py`、即時語音檔。
+
+## 同步紀錄（2026-07-02 · Codex · Release check）
+
+- 本輪範圍：新增 `scripts/release-check.ps1` 與 `npm run release:check`，把靜態 smoke、auth-gate smoke、Supabase doctor 組成推版前一鍵檢查。
+- 預設使用 `MUNEA_SKIP_ENV_LOCAL=1`，避免本機私密 `.env.local` 干擾 smoke 預期；auth-gate 預設跑 `http://127.0.0.1:8211`。
 - 避讓範圍：未改 `web/`、`supabase/sql/`、`engine/perception_engine.py`、`engine/memory_engine.py`、即時語音檔。

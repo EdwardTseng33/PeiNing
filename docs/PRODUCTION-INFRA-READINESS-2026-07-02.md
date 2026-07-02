@@ -16,7 +16,7 @@ This document avoids the active collision zones:
 | Lane | Status | Meaning |
 |---|---|---|
 | Source control | Ready | `main` is the active collaboration branch; small commits are expected. |
-| Local verification | Good | `npm run smoke:no-api`, `npm run smoke:auth`, and Supabase doctor exist. |
+| Local verification | Good | `npm run release:check` now runs the clean pre-release bundle: static smoke, auth-gate smoke, and Supabase doctor. |
 | CI verification | Improved | `.github/workflows/smoke.yml` now runs static smoke, Supabase doctor, and auth-gate smoke on push / PR. |
 | Staging backend | Not ready | No hosted Munea API URL is configured yet. |
 | Supabase live wiring | Partially ready | SQL and adapter exist; live env verification remains pending. |
@@ -38,6 +38,7 @@ Done in this pass:
 - Keep the smoke guardrail green by logging invalid daily-briefing expiration timestamps and opener time-context failures instead of silently swallowing them.
 - Add auth-gate CI smoke so formal-mode user/admin/provider authorization is checked automatically.
 - Allow the local Python engine to use `MUNEA_PORT`, so auth-gate smoke can run on a separate port when 8200 is already occupied.
+- Add `npm run release:check` as a clean pre-release verification bundle that skips local `.env.local`, runs static smoke, auth-gate smoke, and Supabase doctor.
 
 Next safe improvements:
 
@@ -163,13 +164,14 @@ Avoid for now:
 
 ## Recommended CTO Priority
 
-1. Keep CI smoke running on every push.
-2. Decide staging backend host and URL strategy.
-3. Finish Supabase live gate and Auth live E2E.
-4. Lock billing provider verification path.
-5. Wire production scheduled jobs.
-6. Add uptime/error monitoring.
-7. Build Admin MVP after web redesign and schema coordination settle.
+1. Run `npm run release:check` before every push that affects backend, auth, billing, CI, or release readiness.
+2. Keep CI smoke running on every push.
+3. Decide staging backend host and URL strategy.
+4. Finish Supabase live gate and Auth live E2E.
+5. Lock billing provider verification path.
+6. Wire production scheduled jobs.
+7. Add uptime/error monitoring.
+8. Build Admin MVP after web redesign and schema coordination settle.
 
 ## Near-Term Parking Lot
 
