@@ -55,7 +55,7 @@ try {
     throw
   }
 }
-Pass "Port 8200 is free"
+Pass "$BaseUrl is free"
 
 $Python = Resolve-Python
 $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("munea-auth-smoke-" + [System.Guid]::NewGuid().ToString("N"))
@@ -65,6 +65,7 @@ $proc = $null
 $envNames = @(
   "MUNEA_REQUIRE_AUTH",
   "MUNEA_ENABLE_DEV_AUTH_BYPASS",
+  "MUNEA_PORT",
   "MUNEA_ADMIN_API_TOKEN",
   "MUNEA_PROVIDER_WEBHOOK_TOKEN",
   "MUNEA_COMPANION_PROFILE_PATH",
@@ -85,6 +86,8 @@ foreach ($name in $envNames) {
 
 try {
   Step "Start auth-required engine"
+  $uri = [System.Uri]$BaseUrl
+  $env:MUNEA_PORT = [string]$uri.Port
   $env:MUNEA_REQUIRE_AUTH = "1"
   $env:MUNEA_ENABLE_DEV_AUTH_BYPASS = "true"
   $env:MUNEA_ADMIN_API_TOKEN = "admin-smoke-token"

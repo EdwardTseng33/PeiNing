@@ -2807,5 +2807,9 @@ class H(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    print("沐寧 App 伺服器啟動 → http://localhost:8200  （Ctrl+C 結束）")
-    ThreadingHTTPServer(("127.0.0.1", 8200), H).serve_forever()
+    try:
+        port = int(os.environ.get("MUNEA_PORT") or "8200")
+    except ValueError:
+        port = 8200
+    print(f"沐寧 App 伺服器啟動 → http://localhost:{port}  （Ctrl+C 結束）")
+    ThreadingHTTPServer(("127.0.0.1", port), H).serve_forever()

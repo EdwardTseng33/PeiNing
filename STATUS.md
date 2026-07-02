@@ -1,5 +1,14 @@
 # 沐寧 Munea · STATUS（接力檔）
 
+## 2026-07-02 Update - CI auth-gate smoke
+
+**Status:** completed for production authorization verification.
+
+- Extended `.github/workflows/smoke.yml` with a Windows auth-gate job that runs `npm run smoke:auth` on push / pull request.
+- Added `MUNEA_PORT` support to `engine/server.py` and `scripts/auth-gate-smoke.ps1`, so local auth smoke can run on a separate port when `8200` is already occupied.
+- Updated `docs/PRODUCTION-INFRA-READINESS-2026-07-02.md` so CI verification now covers static contracts, Supabase doctor, and formal-mode authorization gates.
+- Avoided `web/`, `supabase/sql/`, memory logic, perception logic, and realtime voice files.
+
 ## 2026-07-02 Update - Non-App infrastructure readiness
 
 **Status:** completed for a non-overlapping infrastructure lane.

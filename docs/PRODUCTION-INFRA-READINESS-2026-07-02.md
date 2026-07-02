@@ -17,7 +17,7 @@ This document avoids the active collision zones:
 |---|---|---|
 | Source control | Ready | `main` is the active collaboration branch; small commits are expected. |
 | Local verification | Good | `npm run smoke:no-api`, `npm run smoke:auth`, and Supabase doctor exist. |
-| CI verification | Started | `.github/workflows/smoke.yml` now runs static smoke and Supabase doctor on push / PR. |
+| CI verification | Improved | `.github/workflows/smoke.yml` now runs static smoke, Supabase doctor, and auth-gate smoke on push / PR. |
 | Staging backend | Not ready | No hosted Munea API URL is configured yet. |
 | Supabase live wiring | Partially ready | SQL and adapter exist; live env verification remains pending. |
 | Auth live E2E | Not ready | Supabase Auth providers and backend token verification still need live-session testing. |
@@ -36,12 +36,14 @@ Done in this pass:
 - Add GitHub Actions smoke workflow for push / pull request.
 - Run static smoke and Supabase doctor without secrets.
 - Keep the smoke guardrail green by logging invalid daily-briefing expiration timestamps and opener time-context failures instead of silently swallowing them.
+- Add auth-gate CI smoke so formal-mode user/admin/provider authorization is checked automatically.
+- Allow the local Python engine to use `MUNEA_PORT`, so auth-gate smoke can run on a separate port when 8200 is already occupied.
 
 Next safe improvements:
 
-1. Add a separate auth-gate CI job that runs `npm run smoke:auth`.
-2. Add branch protection requiring the smoke workflow before merging.
-3. Add a release checklist that records commit, smoke result, backend mode, and known risk.
+1. Add branch protection requiring the smoke workflow before merging.
+2. Add a release checklist that records commit, smoke result, backend mode, and known risk.
+3. Add an optional nightly Supabase live doctor after the live schema is fully applied.
 
 ### 2. Staging Backend Decision
 
