@@ -80,7 +80,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .butler-card::before { content: none; }
 .butler-card::after { content: none; }
 .bc-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 110px; align-items: center; gap: 12px; margin-bottom: 16px; min-height: 132px; }
-.bc-avatar { grid-column: 2; grid-row: 1; width: 108px; height: 132px; border-radius: 28px; position: relative; flex-shrink: 0; background: var(--mint-2); overflow: hidden; box-shadow: 0 18px 32px -18px rgba(46,138,131,.62); animation: floaty 5s ease-in-out infinite; }
+.bc-avatar { grid-column: 2; grid-row: 1; width: 108px; height: 132px; border-radius: 28px; position: relative; flex-shrink: 0; background: var(--mint-2); overflow: hidden; box-shadow: 0 18px 32px -18px rgba(46,138,131,.62); }
 .bc-avatar .ava-img { width: 100%; height: 100%; object-fit: cover; object-position: center 24%; transform: scale(1.03); transform-origin: center top; }
 .bc-avatar .av-stripes { position: absolute; inset: 0; background: none; }
 .bc-avatar .online { position: absolute; right: 4px; bottom: 5px; width: 16px; height: 16px; border-radius: 50%; background: var(--teal); border: 3px solid #fff; }
@@ -143,7 +143,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .cc-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; border: none; background: none; color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; }
 .cc-btn .cc-circle { width: 62px; height: 62px; border-radius: 50%; background: rgba(255,255,255,.14); display: grid; place-items: center; }
 .cc-btn .cc-circle .ic { width: 26px; height: 26px; color: #fff; }
-.cc-btn.end .cc-circle { background: var(--danger); box-shadow: 0 0 24px -4px rgba(229,91,77,.7); }
+.cc-btn.end .cc-circle { background: var(--coral-d); }
 
 /* ============ 用藥服務窗 ============ */
 .med-screen { background: var(--deep); position: relative; }
@@ -327,8 +327,6 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .quest-card .qc-kicker { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--teal-dd); margin-bottom: 6px; }
 .quest-card .qc-kicker .ic { width: 16px; height: 16px; }
 .quest-card .qc-goal { font-family: var(--serif); font-size: 19px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
-.quest-card .qc-bar { display: none; }
-.quest-card .qc-num { font-size: 13.5px; color: var(--muted); } .qc-num b { color: var(--coral-d); font-weight: 700; }
 .quest-card .qc-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; position: relative; }
 .quest-card .qc-members { display: flex; }
 .quest-card .qc-mem { width: 36px; height: 36px; border-radius: 50%; border: 2.5px solid var(--teal-d); overflow: hidden; margin-left: -10px; background: #cdd; }
@@ -436,12 +434,13 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 /* 發起挑戰 彈出面板 */
 .modal-mask { position: absolute; inset: 0; background: rgba(31,45,41,.5); backdrop-filter: blur(3px); z-index: 60; display: none; align-items: flex-end; }
 .modal-mask.show { display: flex; }
-.modal { background: var(--cream); border-radius: 26px 26px 0 0; width: 100%; padding: 0 20px 28px; max-height: 88%; overflow-y: auto; animation: slideup .3s ease; }
+.modal { position: relative; background: var(--cream); border-radius: 26px 26px 0 0; width: 100%; padding: 0 20px 28px; max-height: 88%; overflow-y: auto; animation: slideup .3s ease; }
+.modal > .auth-close { z-index: 6; }
 @keyframes slideup { from { transform: translateY(100%) } to { transform: none } }
 .modal-grab { position: sticky; top: 0; z-index: 5; display: block; width: calc(100% + 40px); height: 28px; margin: 0 -20px 12px; background: var(--cream); border-radius: 26px 26px 0 0; }
 .modal-grab::after { content: ""; position: absolute; left: 50%; top: 12px; transform: translateX(-50%); width: 40px; height: 5px; border-radius: 999px; background: var(--line); }
 .modal h2 { font-family: var(--display); font-size: 21px; font-weight: 800; margin-bottom: 4px; }
-.modal .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+.modal .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.6; }
 .auth-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .auth-close { width: 38px; height: 38px; border-radius: 13px; border: 1px solid var(--line); background: #fff; color: var(--muted); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
 .auth-provider-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 14px; }
@@ -455,7 +454,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .auth-message { min-height: 20px; font-size: 12.5px; color: var(--muted); margin-top: 12px; line-height: 1.4; }
 .auth-message.is-error { color: var(--danger); font-weight: 700; }
 .auth-message.is-ok { color: var(--teal-dd); font-weight: 700; }
-.field-label { font-size: 13px; font-weight: 700; color: var(--muted); margin: 16px 0 9px; }
+.field-label { font-size: 13px; font-weight: 700; color: var(--muted); margin: 22px 0 10px; }
 .chal-types { display: flex; gap: 9px; overflow-x: auto; padding-bottom: 4px; }
 .chal-type { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 14px 16px; border: 1.5px solid var(--line); border-radius: 14px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink); }
 .chal-type.active { border-color: var(--teal); background: var(--mint); }
@@ -500,7 +499,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .cn-privacy .ic { width: 14px; height: 14px; }
 .src-strip .sr-chev { margin-left: auto; flex-shrink: 0; width: 18px; height: 18px; }
 .chat-inner { min-height: calc(100vh - 44px); display: flex; flex-direction: column; align-items: center; padding: 16px 24px 36px; }
-.chat-butler { width: 132px; height: 132px; border-radius: 50%; overflow: hidden; margin: 26px 0 10px; box-shadow: 0 20px 44px -18px rgba(46,138,131,.5); animation: floaty 4.5s ease-in-out infinite; border: 4px solid #fff; }
+.chat-butler { width: 132px; height: 132px; border-radius: 50%; overflow: hidden; margin: 26px 0 10px; box-shadow: 0 20px 44px -18px rgba(46,138,131,.5); border: 4px solid #fff; }
 .chat-butler img { width: 100%; height: 100%; object-fit: cover; }
 .chat-name { font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--ink); }
 .chat-status { font-size: 14px; color: var(--teal-d); margin-top: 4px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
@@ -666,7 +665,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: end;
-  background: rgba(255,255,255,.98);
+  background: rgba(250,247,242,.97);
   border-top: 0.5px solid var(--line);
 }
 .tab-bar.hidden { display: none; }
@@ -674,7 +673,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
   min-width: 0;
   border: none;
   background: transparent;
-  color: #8A9893;
+  color: var(--muted);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -762,15 +761,7 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 .qc-kicker .ic { width: 17px; height: 17px; color: var(--coral-d); }
 .qc-kicker.night .ic { color: #5E7FB6; }
 .qc-days { margin-left: auto; font-size: 12.5px; color: var(--muted); font-weight: 600; background: var(--cream); border-radius: 100px; padding: 3px 10px; }
-.qc-walk { padding: 14px 6px 6px; }
-.qc-track { position: relative; height: 10px; background: var(--mint); border-radius: 100px; margin: 18px 8px 8px; }
 .qc-track > i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--teal); border-radius: 100px; }
-.qc-walker { position: absolute; top: 50%; transform: translate(-50%, -78%); width: 30px; height: 30px; border-radius: 50%; border: 2px solid #FFF; box-shadow: var(--shadow-sm); }
-.qc-walker .init-ava { border-radius: 50%; overflow: hidden; }
-.qc-walker .init-ava { font-size: 13px; }
-.qc-walker.lead { width: 36px; height: 36px; z-index: 2; overflow: visible; }
-.qc-flag { position: absolute; right: -4px; top: 50%; transform: translate(0, -120%); }
-.qc-flag .ic { width: 18px; height: 18px; color: var(--coral-d); }
 
 /* 早睡挑戰：五個月亮點 */
 .qc-moons { display: flex; gap: 10px; padding: 6px 4px 10px; }
@@ -799,8 +790,6 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 @keyframes viewIn { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
 
 /* ===== 寧寧呼吸感（首頁小生命） ===== */
-.bc-avatar img { animation: breathe 4.2s ease-in-out infinite; transform-origin: center; }
-@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
 
 /* 登入視窗 · 信箱段說明（原本孤零零一排、長輩看不懂） */
 .auth-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0 8px; color: var(--muted); font-size: 13px; }
@@ -903,9 +892,9 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
   font-family: var(--sans); font-size: 19px; font-weight: 700; color: #FFF; cursor: pointer;
   box-shadow: var(--shadow-sm); }
 .call-btn .ic { width: 26px; height: 26px; }
-.call-btn.start { background: #2E9E5B; }
+.call-btn.start { background: var(--teal-d); }
 .call-btn.start:active { transform: scale(.96); }
-.call-btn.end { background: var(--danger); }
+.call-btn.end { background: var(--coral-d); }
 .call-btn.end .ic { transform: rotate(135deg); }
 .call-btn.end:active { transform: scale(.96); }
 
@@ -927,7 +916,7 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 .ctl-btn.off { background: rgba(0,0,0,.35); color: rgba(255,255,255,.85); }
 .ctl-btn.off .ic { opacity: .75; }
 .ctl-btn.rec { background: var(--coral-d); color: #FFF; }
-.call-btn.end { background: var(--danger); }
+.call-btn.end { background: var(--coral-d); }
 .call-btn.end .ic { transform: rotate(135deg); }
 
 /* 子頁導覽頭（App 式返回：箭頭＋置中標題） */
@@ -938,12 +927,6 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 .nav-title { text-align: center; font-size: 17px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .chal-input:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(58,168,160,.18); }
-
-/* 開始通話 · 呼吸光環（招牌巧思；系統設「減少動態」時自動靜止） */
-.call-btn.start { position: relative; }
-.call-btn.start::before { content: ""; position: absolute; inset: -7px; border-radius: 100px;
-  border: 2px solid rgba(46,158,91,.45); animation: callBreath 2.6s ease-in-out infinite; pointer-events: none; }
-@keyframes callBreath { 0%,100% { transform: scale(1); opacity: .55; } 50% { transform: scale(1.06); opacity: .15; } }
 
 /* 提醒管理面板 */
 .med-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
@@ -961,12 +944,7 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 .pager-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); transition: background .2s, transform .2s; }
 .pager-dots i.on { background: var(--teal-d); transform: scale(1.25); }
 
-/* 挑戰卡遊戲感：里程碑刻度＋完成率＋終點旗輕飄 */
-.qc-tick { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 4px; height: 16px; border-radius: 3px; background: #FFFFFF; box-shadow: 0 0 0 1.5px var(--mint-2); }
-.qc-pct { position: absolute; left: 50%; transform: translateX(-50%); top: -34px; z-index: 3; background: var(--coral-d); color: #FFF; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 100px; white-space: nowrap; }
-.qc-pct::after { content: ""; position: absolute; left: 50%; bottom: -3px; transform: translateX(-50%) rotate(45deg); width: 6px; height: 6px; background: var(--coral-d); }
-.qc-flag .ic { animation: flagSway 2.4s ease-in-out infinite; transform-origin: bottom left; }
-@keyframes flagSway { 0%,100% { transform: rotate(0); } 50% { transform: rotate(6deg); } }
+/* 挑戰卡遊戲感：里程碑刻度＋完成率＋終點旗輕飄 */ 50% { transform: rotate(6deg); } }
 
 /* 出席看板：分組＋頭像狀態徽章（一眼懂誰能到） */
 .rsvp-board { display: flex; gap: 10px; padding: 6px 0 12px; }
@@ -995,6 +973,20 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 .med-entry b { color: var(--teal-dd); }
 
 /* 用藥設定 · 點選籤 */
-.med-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+.med-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 2px; }
 .mchip { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); font-family: var(--sans); font-size: 15px; font-weight: 600; padding: 10px 16px; border-radius: 100px; min-height: 44px; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
 .mchip.on { background: var(--teal-d); border-color: var(--teal-d); color: #FFF; }
+
+.modal .modal-btn { margin-top: 24px; }
+
+/* 走路挑戰卡：大數字 + 乾淨進度條 + 每人貢獻 */
+.qc-hero { display: flex; align-items: baseline; gap: 7px; margin: 12px 0 12px; }
+.qc-hero b { font-family: var(--serif); font-size: 30px; font-weight: 700; color: var(--ink); }
+.qc-hero .qc-unit { font-size: 15px; font-weight: 600; color: var(--muted); }
+.qc-hero .qc-badge { margin-left: auto; align-self: center; font-size: 15px; font-weight: 700; color: var(--teal-dd); background: var(--mint); border-radius: 100px; padding: 5px 13px; }
+.qc-bar { height: 12px; border-radius: 100px; background: var(--mint); overflow: hidden; }
+.qc-bar i { display: block; height: 100%; border-radius: 100px; background: var(--teal-d); }
+.qc-crew { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 12px; }
+.qc-person { display: inline-flex; align-items: center; gap: 7px; background: var(--cream); border-radius: 100px; padding: 5px 13px 5px 5px; font-size: 13.5px; font-weight: 700; color: var(--ink-2); }
+.qc-person .init-ava { width: 26px; height: 26px; border-radius: 50%; font-size: 12px; }
+.qc-note { font-size: 14px; color: var(--muted); line-height: 1.5; }
