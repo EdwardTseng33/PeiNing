@@ -1062,7 +1062,10 @@ function init() {
   if ($('#newChalBtn')) $('#newChalBtn').addEventListener('click', () => chalModal && chalModal.classList.add('show'));
   if ($('#startChalBtn')) $('#startChalBtn').addEventListener('click', () => {
     const type = document.querySelector('.chal-type.active');
-    const typeName = type ? type.textContent.trim() : '挑戰';
+    const kind = type ? (type.dataset.kind || 'walk') : 'walk';
+    const evName = $('#eventName') ? $('#eventName').value.trim() : '';
+    const evDate = $('#eventDate') ? $('#eventDate').value.trim() : '';
+    const typeName = kind === 'event' ? (evName || '家庭聚會') : (type ? type.textContent.trim() : '挑戰');
     const ons = $$('#inviteList .invite-item.on');
     const names = ons.map(x => (x.querySelector('.iv-name')?.childNodes[0]?.textContent || '').trim()).filter(Boolean);
     closeChal();
@@ -1070,13 +1073,19 @@ function init() {
     if (list && names.length) {
       const card = document.createElement('div');
       card.className = 'quest-card pending';
-      card.innerHTML = '<div class="qc-kicker"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>邀請已送出 · ' + typeName +
-        '<span class="qc-days">等待回覆</span></div>' +
-        '<div class="qc-goal">等 ' + names.join('、') + ' 答應就開始</div>' +
-        '<div class="qc-num">寧寧會親口問阿嬤要不要一起；大家答應後自動開局</div>';
+      const kickerLabel = kind === 'event' ? ('揪一攤 · ' + typeName) : ('邀請已送出 · ' + typeName);
+      const daysChip = kind === 'event' ? (evDate || '等回覆') : '等待回覆';
+      const goal = kind === 'event' ? (typeName + '，誰能到？') : ('等 ' + names.join('、') + ' 答應就開始');
+      const note = kind === 'event'
+        ? '寧寧會親口問阿嬤、幫大家收「去 / 沒空」，回覆都到了會告訴你'
+        : (kind === 'quiz' ? '寧寧當主持人；到齊 2 人就自動開局' : '寧寧會親口問阿嬤要不要一起；大家答應後自動開局');
+      card.innerHTML = '<div class="qc-kicker"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>' + kickerLabel +
+        '<span class="qc-days">' + daysChip + '</span></div>' +
+        '<div class="qc-goal">' + goal + '</div>' +
+        '<div class="qc-num">' + note + '</div>';
       list.parentNode.insertBefore(card, list);
     }
-    say('好，邀請發出去了——寧寧會親口問阿嬤，等大家答應就開始。');
+    say(kind === 'event' ? '好，寧寧幫你問大家——誰能到、誰沒空，回覆齊了告訴你。' : '好，邀請發出去了——寧寧會親口問阿嬤，等大家答應就開始。');
   });
   if (chalModal) chalModal.addEventListener('click', e => { if (e.target === chalModal) closeChal(); });
   // 邀請勾選 → 依人數+能力動態算目標
@@ -1089,15 +1098,20 @@ function init() {
   }
   if (inviteList) inviteList.addEventListener('click', e => { const it = e.target.closest('.invite-item'); if (it) { it.classList.toggle('on'); recalcGoal(); } });
   // 挑戰類型選擇
-  const CHAL_UNITS = { '一起走路': ['3,000 步', '8,000 步', '8,000 步', '6,000 步'], '早點睡': ['5 晚', '5 晚', '5 晚', '5 晚'], '量血壓': ['每天 1 次', '幫忙提醒', '幫忙提醒', '幫忙加油'], '用藥全勤': ['7 天全勤', '幫忙提醒', '幫忙提醒', '幫忙加油'] };
+  const CHAL_UNITS = { walk: ['3,000 步', '8,000 步', '8,000 步', '6,000 步'], quiz: ['用說的就能玩', '手機作答', '手機作答', '手機作答'], event: ['寧寧親口問她', '回覆 去/沒空', '回覆 去/沒空', '回覆 去/沒空'] };
   $$('.chal-type').forEach(b => b.addEventListener('click', () => {
     $$('.chal-type').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
-    const units = CHAL_UNITS[b.textContent.trim()] || [];
+    const kind = b.dataset.kind || 'walk';
+    const units = CHAL_UNITS[kind] || [];
     $$('#inviteList .invite-item').forEach((it, i) => {
       const sub = it.querySelector('.iv-sub');
-      if (sub && units[i]) sub.textContent = '份額 ' + units[i] + '（依能力）';
+      if (sub && units[i]) sub.textContent = kind === 'walk' ? ('份額 ' + units[i] + '（依能力）') : units[i];
     });
+    const ef = $('#eventFields');
+    if (ef) ef.style.display = kind === 'event' ? '' : 'none';
+    const gb = document.querySelector('.goal-box');
+    if (gb) gb.style.display = kind === 'walk' ? '' : 'none';
   }));
   // 家庭記錄簿
   if ($('#bookBtn')) $('#bookBtn').addEventListener('click', () => { $('#viewAll').classList.remove('active'); $('#viewPerson').classList.remove('active'); $('#viewBook').classList.add('active'); });

@@ -828,3 +828,14 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 .auth-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0 8px; color: var(--muted); font-size: 13px; }
 .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .auth-email-hint { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin: 0 0 10px; }
+
+/* 揪一攤（活動投票） */
+.chal-input { width: 100%; min-height: 48px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 12px 14px; font-family: var(--sans); font-size: 16px; color: var(--ink); margin-bottom: 4px; }
+.chal-input::placeholder { color: var(--muted); }
+.qc-kicker.event .ic { color: var(--coral-d); }
+.qc-rsvp { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 10px; }
+.qc-rsvp .rsvp { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; border-radius: 100px; padding: 5px 12px 5px 5px; }
+.qc-rsvp .rsvp .init-ava { width: 26px; height: 26px; border-radius: 50%; font-size: 12px; }
+.qc-rsvp .yes { background: var(--mint); color: var(--teal-dd); }
+.qc-rsvp .no { background: #F1EFE8; color: var(--muted); }
+.qc-rsvp .wait { background: var(--coral-soft); color: var(--coral-d); }
