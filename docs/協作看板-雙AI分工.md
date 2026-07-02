@@ -31,7 +31,7 @@
 
 | 誰 | 在做什麼 | 預計動到哪些檔 | 開始時間 | 狀態 |
 |---|---|---|---|---|
-| Claude / 城堡 | ✅ 記憶層 100%（13/13 驗收）→ **感知層 P0 實作中**：真時間/真天氣(CWA+Open-Meteo 兜底)/AQI/每日簡報→snapshot→開場注入、拿掉假寒流、語氣感知指示 | `engine/perception_engine.py`（新）、`engine/server.py`（build_reply_context/reply_context_instruction/daily-briefing 端點）、`engine/chat_engine.py`（open_chat 真天氣＋時段） | 2026-07-02 | 🔄 進行中 |
+| Claude / 城堡 | ✅ 記憶層 100%（13/13 驗收）→ ✅ **感知層 ~95%**：P0 全上＋情緒感知模組（analyze_conversation_mood→WellbeingSignal→趨勢/基準線/溫柔提示）＋主動開口引擎（score-before-speak＋退頻）＋照護行事曆＋暖新聞（護欄）＋在地（OSM）＋智慧鏡頭＋簡報開聊自動保鮮。新端點：`/wellbeing/trend` `/proactive/opening` `/care-schedule`。剩「家人狀態源」→ 併入下一步家人帳號連動架構設計（Edward 已排序：帳號連動＋UIUX 重設計 → 家人互動遊戲；Edward 表明**目前 App 設計不滿意**、UIUX 要重操刀） | `engine/perception_engine.py`、`engine/server.py`、`engine/wellbeing_signals.json`/`care_schedule.json`（gitignore 待補） | 2026-07-02 | 🔄 進行中 |
 | Codex | iOS/TestFlight Mac 交接包：在不碰記憶主線的情況下，把 Mac/Xcode/Apple Developer/真機 QA 步驟落檔 | `docs/TESTFLIGHT-MAC-HANDOFF-2026-07-02.md`、`docs/APP-STORE-PRODUCTION-READINESS.md`、`docs/MOBILE-VOICE-BRIDGE.md`、`docs/CURRENT-DEVELOPMENT-PLAN.md`、`STATUS.md` | 2026-07-02 | ✅ 完成 |
 
 > 📋 **開發排程**見 [健檢修復排程-2026-07-01](健檢修復排程-2026-07-01.md)（健檢三方發現的問題已排 P0/P1/核心＋認領欄）。**認領前先看、避免重複。**

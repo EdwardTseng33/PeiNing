@@ -250,6 +250,134 @@ def build_briefing(region=None):
     }
 
 
+_GENAI = None
+
+
+def _genai_client():
+    global _GENAI
+    if _GENAI is None:
+        key = os.environ.get("GEMINI_API_KEY")
+        if not key:
+            return None
+        from google import genai
+        _GENAI = genai.Client(api_key=key)
+    return _GENAI
+
+
+_MOOD_SYS = """你是沐寧的心情觀察員（陪伴用，非醫療、絕不診斷）。讀「長輩（使用者）這輪對話說的話」，
+從三個角度溫和觀察：語氣（怎麼說：有沒有精神、急促或低緩——由文字語感推測）、用語（慣用說法、話量、主動或簡短）、用詞（選了什麼字眼：正向/負向/身體/思念）。
+只回 JSON：
+{"level":1-5,  // 5=很開朗 4=不錯 3=平平 2=有點悶 1=悶悶的
+ "voiceObs":"聲音聽起來…（有精神/平穩/比較累，一短句）",
+ "chatObs":"聊天狀態…（話匣子全開/平常/話比較少，一短句）",
+ "wordObs":"用詞觀察一短句（例：提到開心的事居多／出現想念、疼痛字眼）",
+ "topics":["聊到的話題1","2","3"],
+ "positives":["提到的開心事"],
+ "concerns":["提到的掛心事（身體不適/想念/煩惱），沒有就空"],
+ "confidence":0-1}
+規則：這是「觀察」不是「判定」；絕不用憂鬱/焦慮/失智等臨床字眼；資訊不足時 level 給 3、confidence 給低。"""
+
+
+def analyze_conversation_mood(history):
+    """聊完的心情觀察（語氣/用語/用詞三角度）→ 給趨勢庫與心情卡。非醫療、只觀察。"""
+    client = _genai_client()
+    user_text = "\n".join(h.get("text", "") for h in (history or [])
+                          if h.get("role") == "user" and h.get("text"))
+    if not client or not user_text.strip():
+        return None
+    from google.genai import types as gtypes
+    try:
+        r = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[gtypes.Content(role="user", parts=[gtypes.Part(text="長輩這輪說的話：\n" + user_text)])],
+            config=gtypes.GenerateContentConfig(
+                system_instruction=_MOOD_SYS, temperature=0.2, response_mime_type="application/json"),
+        )
+        m = json.loads(r.text)
+    except Exception:
+        return None
+    if not isinstance(m, dict):
+        return None
+    level = m.get("level")
+    try:
+        level = max(1, min(5, int(level)))
+    except (TypeError, ValueError):
+        return None
+    labels = {5: "很開朗", 4: "不錯", 3: "平平", 2: "有點悶", 1: "悶悶的"}
+    return {
+        "level": level,
+        "levelLabel": labels[level],
+        "voiceObs": (m.get("voiceObs") or "").strip()[:60],
+        "chatObs": (m.get("chatObs") or "").strip()[:60],
+        "wordObs": (m.get("wordObs") or "").strip()[:60],
+        "topics": [str(t).strip() for t in (m.get("topics") or []) if str(t).strip()][:5],
+        "positives": [str(t).strip() for t in (m.get("positives") or []) if str(t).strip()][:3],
+        "concerns": [str(t).strip() for t in (m.get("concerns") or []) if str(t).strip()][:3],
+        "confidence": round(float(m.get("confidence", 0.5) or 0.5), 2),
+    }
+
+
+_NEWS_SYS = """你是沐寧的暖新聞選稿員。用搜尋找「今天或最近、適合台灣長輩聊天的 1 則正向軟性新聞」。
+只准：溫馨社會、健康生活（非醫囑）、文化節慶、在地活動、動物、運動賽事佳績。
+絕不准：政治、犯罪、詐騙、災難、疾病恐慌、爭議。找不到合適的就回空。
+只回 JSON：{"line":"一句話新聞（40字內、口語、適合開話題）","topic":"標籤"}；不合適回 {"line":"","topic":""}"""
+
+
+def fetch_daily_news():
+    """每日一則暖新聞（真搜尋、有護欄：只挑正向軟性、找不到寧可不給）。"""
+    client = _genai_client()
+    if not client:
+        return None
+    from google.genai import types as gtypes
+    try:
+        r = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents="請找今天適合台灣長輩的一則正向軟性新聞。",
+            config=gtypes.GenerateContentConfig(
+                system_instruction=_NEWS_SYS, temperature=0.3,
+                tools=[gtypes.Tool(google_search=gtypes.GoogleSearch())]),
+        )
+        text = r.text or ""
+        start, end = text.find("{"), text.rfind("}")
+        data = json.loads(text[start:end + 1]) if start >= 0 and end > start else {}
+    except Exception:
+        return None
+    line = (data.get("line") or "").strip()
+    if not line or len(line) > 60:
+        return None
+    banned = ("政治", "詐騙", "詐欺", "命案", "車禍", "地震", "疫情", "戰爭", "槍", "毒")
+    if any(b in line for b in banned):
+        return None
+    return {"line": line, "topic": (data.get("topic") or "").strip()[:12], "source": "search"}
+
+
+def fetch_nearby_places(kind="pharmacy", region=None, limit=3):
+    """在地感知（免鑰匙 OpenStreetMap）：找縣市中心附近的藥局/診所/公園。獨立呼叫、不進即時通話。"""
+    region = region or DEFAULT_REGION
+    lat, lon = _COORDS.get(region, _COORDS[DEFAULT_REGION])
+    tags = {"pharmacy": '["amenity"="pharmacy"]', "clinic": '["amenity"="clinic"]', "park": '["leisure"="park"]'}
+    tag = tags.get(kind, tags["pharmacy"])
+    query = f'[out:json][timeout:8];nwr{tag}(around:4000,{lat},{lon});out center {max(limit * 4, 12)};'
+    try:
+        req = urllib.request.Request(
+            "https://overpass-api.de/api/interpreter",
+            data=urllib.parse.urlencode({"data": query}).encode(),
+            headers={"accept": "application/json",
+                     "user-agent": "Munea/1.0 (elder-care companion; contact: app@munea.tw)"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        out = []
+        for el in (data.get("elements") or []):
+            name = (el.get("tags") or {}).get("name")
+            if name and name not in out:
+                out.append(name)
+            if len(out) >= limit:
+                break
+        return out
+    except Exception:
+        return []
+
+
 if __name__ == "__main__":
     print("時間感知：", json.dumps(now_context(), ensure_ascii=False))
     b = build_briefing()

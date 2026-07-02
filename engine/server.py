@@ -393,6 +393,171 @@ def _invalidate_memory_items(ids):
     save_memory_items(kept)
 
 
+WELLBEING_PATH = os.environ.get("MUNEA_WELLBEING_PATH") or os.path.join(HERE, "wellbeing_signals.json")
+CARE_SCHEDULE_PATH = os.environ.get("MUNEA_CARE_SCHEDULE_PATH") or os.path.join(HERE, "care_schedule.json")
+
+
+def append_wellbeing_signal(signal):
+    """存一筆「心情觀察」訊號（統一格式 WellbeingSignal：V2 影像/動作將來也吐同格式）。"""
+    signals = read_json_file(WELLBEING_PATH, [])
+    if not isinstance(signals, list):
+        signals = []
+    signals.append(signal)
+    write_json_file(WELLBEING_PATH, signals[-2000:])
+    return signal
+
+
+def load_wellbeing_signals(person_id=None, limit=200):
+    signals = read_json_file(WELLBEING_PATH, [])
+    if not isinstance(signals, list):
+        signals = []
+    if person_id:
+        signals = [s for s in signals if s.get("personId") == person_id]
+    return signals[-limit:]
+
+
+def wellbeing_trend_response(data):
+    """心情趨勢（餵 App 心情天氣卡）：近 N 天每日聚合＋個人基準線＋溫柔提示判斷。
+    鐵律：給的是觀察與天氣等級，絕無 0-100 分數、絕無臨床字眼。"""
+    data = data or {}
+    person_id = data.get("personId") or data.get("person_id") or PRIMARY_CARE_RECIPIENT_ID
+    days = int(data.get("days") or 7)
+    signals = load_wellbeing_signals(person_id, limit=500)
+    by_date = {}
+    for s in signals:
+        d = s.get("date")
+        if d:
+            by_date.setdefault(d, []).append(s)
+    dates = sorted(by_date.keys())
+    daily = []
+    for d in dates[-days:]:
+        rows = by_date[d]
+        avg = sum(r.get("level", 3) for r in rows) / len(rows)
+        latest = rows[-1]
+        daily.append({
+            "date": d,
+            "level": round(avg, 1),
+            "levelLabel": latest.get("levelLabel"),
+            "voiceObs": latest.get("voiceObs"),
+            "chatObs": latest.get("chatObs"),
+            "topics": latest.get("topics") or [],
+        })
+    # 個人基準線＝再往前 14 天的平均（跟自己比、不跟量表比）
+    base_dates = dates[:-3] if len(dates) > 3 else []
+    base_rows = [r for d in base_dates[-14:] for r in by_date[d]]
+    baseline = round(sum(r.get("level", 3) for r in base_rows) / len(base_rows), 2) if base_rows else None
+    recent_rows = [r for d in dates[-3:] for r in by_date[d]]
+    recent = round(sum(r.get("level", 3) for r in recent_rows) / len(recent_rows), 2) if recent_rows else None
+    concern = bool(baseline and recent and len(recent_rows) >= 2 and recent <= baseline - 0.8)
+    gentle_note = ""
+    if concern:
+        gentle_note = "這幾天聊天比平常安靜一些。不一定有什麼事——但也許是打通電話回家的好時機。"
+    return {"ok": True, "personId": person_id, "daily": daily,
+            "baseline": baseline, "recent": recent,
+            "gentleConcern": concern, "gentleNote": gentle_note,
+            "display": {"scale": ["悶悶的", "有點悶", "平平", "不錯", "很開朗"],
+                        "rule": "觀察不是判定；絕無分數、絕無臨床字眼"}}
+
+
+def load_care_schedule(person_id=None):
+    items = read_json_file(CARE_SCHEDULE_PATH, [])
+    if not isinstance(items, list):
+        items = []
+    if person_id:
+        items = [i for i in items if i.get("personId") in (None, person_id)]
+    return items
+
+
+def today_care_items(person_id=None):
+    """今天的照護行事曆（回診/用藥日/重要日子）：date 精確比對或 weekday 每週重複。"""
+    import perception_engine
+    ctx = perception_engine.now_context()
+    out = []
+    for it in load_care_schedule(person_id):
+        if it.get("date") == ctx["date"] or (it.get("weekday") and it.get("weekday") == ctx["weekday"]):
+            if it.get("label"):
+                out.append(it["label"])
+    return out
+
+
+def care_schedule_response(data):
+    data = data or {}
+    action = data.get("action") or "list"
+    person_id = data.get("personId") or data.get("person_id") or PRIMARY_CARE_RECIPIENT_ID
+    items = read_json_file(CARE_SCHEDULE_PATH, [])
+    if not isinstance(items, list):
+        items = []
+    if action == "add":
+        item = {
+            "id": "cs_" + uuid.uuid4().hex[:10],
+            "personId": person_id,
+            "label": (data.get("label") or "").strip()[:60],
+            "date": data.get("date"),
+            "weekday": data.get("weekday"),
+            "createdAt": utc_now(),
+        }
+        if item["label"]:
+            items.append(item)
+            write_json_file(CARE_SCHEDULE_PATH, items[-500:])
+        return {"ok": True, "action": "add", "item": item}
+    if action == "remove":
+        rid = data.get("id")
+        items = [i for i in items if i.get("id") != rid]
+        write_json_file(CARE_SCHEDULE_PATH, items)
+        return {"ok": True, "action": "remove", "id": rid}
+    return {"ok": True, "action": "list", "items": load_care_schedule(person_id),
+            "today": today_care_items(person_id)}
+
+
+def proactive_opening_response(data):
+    """主動開口引擎（感知層的靈魂 · 借 ElliQ「先算了才開口」）：
+    分數 = 時段合適度 × 今天已開口次數退頻 × 心情調節 × 今日關懷素材加成。夠高才開口、低分就安靜。"""
+    import perception_engine
+    data = data or {}
+    person_id = data.get("personId") or data.get("person_id") or PRIMARY_CARE_RECIPIENT_ID
+    ctx = perception_engine.now_context()
+    reasons = []
+    period_fit = {"清晨": 0.55, "早上": 0.85, "中午": 0.45, "下午": 0.75,
+                  "傍晚": 0.8, "晚上": 0.65, "深夜": 0.05}.get(ctx["period"], 0.5)
+    score = period_fit
+    reasons.append(f"時段 {ctx['period']}（合適度 {period_fit}）")
+    opened = int(data.get("openedToday") or 0)  # 今天已主動幾次 → 指數退頻（預設一天 1 次為主）
+    if opened:
+        score *= 0.35 ** opened
+        reasons.append(f"今天已主動 {opened} 次 → 大幅退頻")
+    style = "warm"
+    signals = load_wellbeing_signals(person_id, limit=10)
+    last = signals[-1] if signals else None
+    if last and last.get("level") is not None:
+        if last["level"] <= 2:
+            style = "gentle"
+            score += 0.1
+            reasons.append("最近聽起來有點悶 → 更該溫柔關心（語氣放輕）")
+        elif last["level"] >= 4:
+            reasons.append("最近心情不錯")
+    brief = _latest_daily_briefing(person_id)
+    if brief.get("careHints"):
+        score += 0.08
+        reasons.append("今天有關懷素材（天氣/空品提醒）")
+    if today_care_items(person_id):
+        score += 0.12
+        reasons.append("今天有重要日子（回診/紀念日）")
+    score = round(max(0.0, min(1.0, score)), 2)
+    should = score >= 0.5
+    opener = ""
+    if should and data.get("withText", True):
+        try:
+            today_line = brief.get("briefingLine") or ""
+            if style == "gentle":
+                today_line += "（她昨天聽起來有點悶——開場要更輕更慢，先陪伴、不要話題轟炸。）"
+            opener = eng.open_chat(data.get("char") or DEFAULT_CHAR, today=today_line)
+        except Exception as e:
+            log_fallback_exception("generate proactive opener", e)
+    return {"ok": True, "brain": "butler", "action": "proactive_opening",
+            "shouldOpen": should, "score": score, "style": style,
+            "period": ctx["period"], "reasons": reasons, "opener": opener}
+
+
 def refresh_daily_briefing(region=None, person_id=None):
     """每日簡報功課：抓真天氣＋真空品 → 一句人話 → 存感知抽屜（帶當天到期）。
     設計為清晨定時跑（預設 06:30）；也可由管理端手動觸發。"""
@@ -403,6 +568,12 @@ def refresh_daily_briefing(region=None, person_id=None):
     except Exception as e:
         log_fallback_exception("build daily briefing", e)
         return {"ok": False, "brain": "butler", "action": "daily_briefing", "error": "briefing_failed"}
+    briefing["scheduleToday"] = today_care_items(person_id)  # 今天的回診/重要日子
+    try:
+        news = perception_engine.fetch_daily_news()  # 每日一則暖新聞（有護欄、找不到寧可不給）
+        briefing["newsLine"] = (news or {}).get("line") or ""
+    except Exception:
+        briefing["newsLine"] = ""
     expires = briefing["date"] + "T23:59:59+08:00"  # 當天有效、隔天自然過期
     append_perception_snapshots([{
         "personId": person_id,
@@ -752,6 +923,11 @@ def build_reply_context(history, char=DEFAULT_CHAR, data=None):
         now_ctx = perception_engine.now_context()
     except Exception:
         now_ctx = {}
+    briefing = _latest_daily_briefing()
+    if not briefing:
+        # 簡報保鮮：沒有今天的就背景補做（不擋這一次回話——這輪不提天氣、下一輪就有）
+        import threading
+        threading.Thread(target=refresh_daily_briefing, daemon=True).start()
     return {
         "persona": persona,
         "guardian": guardian,
@@ -759,7 +935,7 @@ def build_reply_context(history, char=DEFAULT_CHAR, data=None):
         "perception": perception,
         "livingProfile": load_living_profile(),
         "now": now_ctx,                                # 真時間（台灣、時段、語氣提示）
-        "dailyBriefing": _latest_daily_briefing(),     # 今日簡報（清晨備好的真天氣/空品）
+        "dailyBriefing": briefing,                     # 今日簡報（清晨備好的真天氣/空品/行程/暖聞）
     }
 
 
@@ -785,12 +961,16 @@ def reply_context_instruction(context):
                      + (f"時段語氣：{now_ctx.get('toneHint')}。" if now_ctx.get("toneHint") else "") + "）")
     brief = context.get("dailyBriefing") or {}
     brief_line = ""
-    if brief.get("briefingLine") or brief.get("careHints"):
+    if brief.get("briefingLine") or brief.get("careHints") or brief.get("scheduleToday") or brief.get("newsLine"):
         seg = "（今日簡報（已核實的真實資料，可自然帶進關心、不要照唸）："
         if brief.get("briefingLine"):
             seg += brief["briefingLine"] + "。"
         if brief.get("careHints"):
             seg += "關心提示：" + "；".join(brief["careHints"]) + "。"
+        if brief.get("scheduleToday"):
+            seg += "今天的重要日子：" + "、".join(brief["scheduleToday"]) + "（要記得溫柔提醒）。"
+        if brief.get("newsLine"):
+            seg += "今日暖聞（可當話題）：" + brief["newsLine"]
         brief_line = seg + "）"
     living = context.get("livingProfile") or {}
     living_parts = []
@@ -828,6 +1008,7 @@ def reply_context_instruction(context):
         time_line,
         brief_line,
         "（聽出對方的語氣與心情、跟著調整：聽起來累或低落→放柔放慢、不催、多陪；開心→跟著亮起來。這是關心、不是診斷，絕不評斷對方的心理狀態。）",
+        "（智慧鏡頭：可溫柔用台灣諺語、生活智慧、簡單的反思提問陪伴；對方有信仰才順著其信仰語彙。絕不捏造經文、不強加宗教、不說教；危機時安全規則優先於一切。）",
         living_line,
         "（相關記憶：\n" + ("\n".join(memory_lines) if memory_lines else "- 沒有足夠相關記憶，不要假裝記得。") + "\n）",
         "（即時感知需求：\n" + ("\n".join(domain_lines) if domain_lines else "- 此輪不需要外部即時事實。") + "\n）",
@@ -2248,6 +2429,24 @@ def butler_post_turn_response(data):
     person_id = data.get("personId") or data.get("person_id") or PRIMARY_CARE_RECIPIENT_ID
     extract = _post_turn_extract(history, person_id, store=(data.get("storeMemory") is not False))
     stored_memories = extract.get("memoryItems") or []
+    mood = None
+    if data.get("analyzeMood") is not False:
+        try:
+            import perception_engine
+            mood = perception_engine.analyze_conversation_mood(history)
+        except Exception as e:
+            log_fallback_exception("analyze conversation mood", e)
+        if mood:
+            append_wellbeing_signal({
+                "id": "wb_" + uuid.uuid4().hex[:10],
+                "personId": person_id,
+                "date": perception_engine.now_context()["date"],
+                "modality": "text",            # V2 之後：voice(語調) / face / motion 吐同一格式
+                "signalType": "mood",
+                **mood,
+                "isMedicalInference": False,   # 硬閘：觀察、絕非診斷
+                "createdAt": utc_now(),
+            })
     relationship_state = relationship_state_from_turn(data, context, stored_memories)
     saved_state = upsert_relationship_state(relationship_state)
     append_product_event({
@@ -2269,6 +2468,7 @@ def butler_post_turn_response(data):
             "extractor": extract.get("extractor"),
             "storagePolicy": extract.get("storagePolicy"),
         },
+        "wellbeing": mood,
         "relationshipState": saved_state,
         "privacy": {
             "storesRawTranscriptByDefault": False,
@@ -2449,6 +2649,12 @@ class H(BaseHTTPRequestHandler):
                     self._json_error(403, code, "Admin token is required")
                 else:
                     self._json(refresh_living_profile(data.get("personId") or data.get("person_id")))
+            elif self.path == "/wellbeing/trend":
+                self._json(wellbeing_trend_response(data))
+            elif self.path == "/proactive/opening":
+                self._json(proactive_opening_response(data))
+            elif self.path == "/care-schedule":
+                self._json(care_schedule_response(data))
             elif self.path == "/admin/daily-briefing":
                 ok, code = admin_authorized(self.headers)
                 if not ok:
