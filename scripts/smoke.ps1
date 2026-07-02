@@ -9,6 +9,10 @@ $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 $env:PYTHONUTF8 = "1"
 $env:PYTHONIOENCODING = "utf-8"
+if ($SkipApi) {
+  $env:MUNEA_SKIP_ENV_LOCAL = "1"
+  Remove-Item Env:MUNEA_DATABASE_PROVIDER -ErrorAction SilentlyContinue
+}
 
 function Resolve-Python {
   $venvPython = Join-Path $root ".venv\Scripts\python.exe"

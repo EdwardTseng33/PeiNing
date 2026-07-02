@@ -45,6 +45,7 @@ Done in this pass:
 - Add auth-gate CI smoke so formal-mode user/admin/provider authorization is checked automatically.
 - Allow the local Python engine to use `MUNEA_PORT`, so auth-gate smoke can run on a separate port when 8200 is already occupied.
 - Add `npm run release:check` as a clean pre-release verification bundle that skips local `.env.local`, runs static smoke, auth-gate smoke, and Supabase doctor.
+- Harden `npm run smoke:no-api` so it also skips local `.env.local` and stays on the deterministic JSON/static verification path.
 
 Next safe improvements:
 
@@ -101,6 +102,7 @@ Observed local blocker:
 - If `MUNEA_DATABASE_PROVIDER=supabase` is enabled before every SQL file is applied, local smoke can fail when the backend tries to read missing tables such as `companion_relationship_states`.
 - For CI/static checks, force `MUNEA_DATABASE_PROVIDER=json` so the smoke workflow verifies repo contracts without depending on a partially configured live database.
 - `MUNEA_SKIP_ENV_LOCAL=1` is available for CI/clean verification so `engine/.env.local` secrets do not leak into static smoke assumptions.
+- `npm run smoke:no-api` now sets this clean mode automatically; use `npm run supabase:doctor:live` when the goal is to validate real Supabase wiring.
 
 Next safe work:
 

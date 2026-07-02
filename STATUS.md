@@ -1,5 +1,14 @@
 # 沐寧 Munea · STATUS（接力檔）
 
+## 2026-07-02 Update - Clean no-api smoke isolation
+
+**Status:** completed for local verification stability.
+
+- Hardened `scripts/smoke.ps1 -SkipApi` so `npm run smoke:no-api` automatically ignores private `engine/.env.local` values and keeps static smoke away from a partially configured live Supabase environment.
+- This keeps no-api smoke focused on repo contracts, frontend syntax/id checks, JSON fallback contracts, and architecture docs.
+- Live Supabase verification remains separate through `npm run supabase:doctor:live` after approved SQL has been applied.
+- Avoided `web/`, `supabase/sql/`, memory internals, perception internals, realtime voice files, and broad backend behavior changes.
+
 ## 2026-07-02 Update - Hosted staging smoke
 
 **Status:** completed for staging backend verification.
