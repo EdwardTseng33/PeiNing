@@ -876,6 +876,15 @@ function setupAuthControls() {
 })();
 
 let _toastTimer = null;
+function pushFamilyFeed(text) {
+  const peek = $('.fam-peek .fp-text');
+  if (peek) peek.innerHTML = text;
+  try { localStorage.setItem('munea.familyFeed', text); } catch (e) {}
+}
+function restoreFamilyFeed() {
+  try { const t = localStorage.getItem('munea.familyFeed'); if (t) { const peek = $('.fam-peek .fp-text'); if (peek) peek.innerHTML = t; } } catch (e) {}
+}
+
 function toast(text) {
   const t = $('#toast');
   if (!t) return;
@@ -904,13 +913,42 @@ const CHEERS = {
   walk: '出去走走最好了，回來記得喝口水。',
   chat: '謝謝你跟我說這些，我都記著呢。',
 };
+function refreshTaskProgress() {
+  const items = $$('#taskCard .task-item');
+  const done = items.filter(i => i.classList.contains('done')).length;
+  const prog = $('.task-progress');
+  if (!prog) return;
+  const label = prog.childNodes[prog.childNodes.length - 1];
+  if (label) label.textContent = ` ${done} / ${items.length}`;
+  const bar = prog.querySelector('.bar i');
+  if (bar) bar.style.width = items.length ? `${Math.round(done / items.length * 100)}%` : '0%';
+}
+
+let _uncheckArm = null;
 function toggleTask(item) {
-  const done = item.classList.toggle('done');
-  if (done) say(CHEERS[item.dataset.task] || '做得很好。');
+  if (item.classList.contains('done')) {
+    // 防手抖：取消「已完成」要按兩次（第一次只提示、3 秒內再按才真的取消）
+    if (_uncheckArm === item) {
+      _uncheckArm = null;
+      item.classList.remove('done');
+      refreshTaskProgress();
+      toast('好，先取消這筆，等等再完成也可以。');
+    } else {
+      _uncheckArm = item;
+      toast('這件已經完成了——再按一次才會取消。');
+      setTimeout(() => { if (_uncheckArm === item) _uncheckArm = null; }, 3000);
+    }
+    return;
+  }
+  item.classList.add('done');
+  refreshTaskProgress();
+  say(CHEERS[item.dataset.task] || '做得很好。');
 }
 
 function init() {
   syncCompanionUI();
+  refreshTaskProgress();
+  restoreFamilyFeed();
   applyDeveloperBypass();
   setupAuthControls();
   setupAiProviderConsentControls();
@@ -968,6 +1006,8 @@ function init() {
     reactRow.querySelectorAll('.react-btn.sent').forEach(x => x.classList.remove('sent'));
     b.classList.add('sent');
     say(`好，寧寧會幫你轉達——你${b.dataset.react}。`);
+    const who = document.getElementById('ptName')?.textContent || '家人';
+    pushFamilyFeed(`<b>你</b>剛剛給${who}${b.dataset.react || '送上心意'}——寧寧下次聊天會親口告訴${who === '阿嬤' ? '她' : 'TA'}`);
   });
 
   // 全家健康圈：切換成員看健康
@@ -1020,7 +1060,24 @@ function init() {
   const chalModal = $('#chalModal');
   const closeChal = () => chalModal && chalModal.classList.remove('show');
   if ($('#newChalBtn')) $('#newChalBtn').addEventListener('click', () => chalModal && chalModal.classList.add('show'));
-  if ($('#startChalBtn')) $('#startChalBtn').addEventListener('click', () => { closeChal(); say('好，邀請發出去了，等大家答應就開始。'); });
+  if ($('#startChalBtn')) $('#startChalBtn').addEventListener('click', () => {
+    const type = document.querySelector('.chal-type.active');
+    const typeName = type ? type.textContent.trim() : '挑戰';
+    const ons = $$('#inviteList .invite-item.on');
+    const names = ons.map(x => (x.querySelector('.iv-name')?.childNodes[0]?.textContent || '').trim()).filter(Boolean);
+    closeChal();
+    const list = document.querySelector('#newChalBtn')?.closest('.pad')?.querySelector('.quest-card');
+    if (list && names.length) {
+      const card = document.createElement('div');
+      card.className = 'quest-card pending';
+      card.innerHTML = '<div class="qc-kicker"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>邀請已送出 · ' + typeName +
+        '<span class="qc-days">等待回覆</span></div>' +
+        '<div class="qc-goal">等 ' + names.join('、') + ' 答應就開始</div>' +
+        '<div class="qc-num">寧寧會親口問阿嬤要不要一起；大家答應後自動開局</div>';
+      list.parentNode.insertBefore(card, list);
+    }
+    say('好，邀請發出去了——寧寧會親口問阿嬤，等大家答應就開始。');
+  });
   if (chalModal) chalModal.addEventListener('click', e => { if (e.target === chalModal) closeChal(); });
   // 邀請勾選 → 依人數+能力動態算目標
   const inviteList = $('#inviteList');
@@ -1032,7 +1089,16 @@ function init() {
   }
   if (inviteList) inviteList.addEventListener('click', e => { const it = e.target.closest('.invite-item'); if (it) { it.classList.toggle('on'); recalcGoal(); } });
   // 挑戰類型選擇
-  $$('.chal-type').forEach(b => b.addEventListener('click', () => { $$('.chal-type').forEach(x => x.classList.remove('active')); b.classList.add('active'); }));
+  const CHAL_UNITS = { '一起走路': ['3,000 步', '8,000 步', '8,000 步', '6,000 步'], '早點睡': ['5 晚', '5 晚', '5 晚', '5 晚'], '量血壓': ['每天 1 次', '幫忙提醒', '幫忙提醒', '幫忙加油'], '用藥全勤': ['7 天全勤', '幫忙提醒', '幫忙提醒', '幫忙加油'] };
+  $$('.chal-type').forEach(b => b.addEventListener('click', () => {
+    $$('.chal-type').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    const units = CHAL_UNITS[b.textContent.trim()] || [];
+    $$('#inviteList .invite-item').forEach((it, i) => {
+      const sub = it.querySelector('.iv-sub');
+      if (sub && units[i]) sub.textContent = '份額 ' + units[i] + '（依能力）';
+    });
+  }));
   // 家庭記錄簿
   if ($('#bookBtn')) $('#bookBtn').addEventListener('click', () => { $('#viewAll').classList.remove('active'); $('#viewPerson').classList.remove('active'); $('#viewBook').classList.add('active'); });
   if ($('#bookBack')) $('#bookBack').addEventListener('click', () => { $('#viewBook').classList.remove('active'); $('#viewAll').classList.add('active'); });

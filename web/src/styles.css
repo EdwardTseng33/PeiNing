@@ -62,7 +62,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .home-meta b { color: var(--teal-d); font-weight: 800; }
 
 .greeting-wrap { position: relative; margin: 4px 0 16px; }
-.greeting-kicker { font-family: var(--display); font-size: 12.5px; font-weight: 700; letter-spacing: .1em; color: var(--teal-d); text-transform: uppercase; margin-bottom: 2px; }
+.greeting-kicker { font-family: var(--sans); font-size: 12.5px; font-weight: 700; letter-spacing: .1em; color: var(--teal-d); text-transform: uppercase; margin-bottom: 2px; }
 .greeting-big { font-family: var(--serif); max-width: 310px; font-size: 29px; font-weight: 800; color: var(--ink); letter-spacing: 0; line-height: 1.16; }
 .greeting-sun { position: absolute; right: 8px; top: 4px; width: 56px; height: 56px; border-radius: 50%; background: #F6ECD4; opacity: .55; }
 
@@ -73,7 +73,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .wallet-strip .ws-text b { color: var(--teal-dd); font-family: var(--display); font-weight: 700; }
 
 /* AI 陪伴入口：資訊分層 + 人物存在感 */
-.butler-card { position: relative; border-radius: 24px; padding: 18px; margin-bottom: 16px; overflow: hidden; box-shadow: var(--shadow-sm); background: var(--surface); border: 1px solid var(--line); }
+.butler-card { position: relative; border-radius: 24px; padding: 18px; margin-bottom: 24px; overflow: hidden; box-shadow: var(--shadow-sm); background: var(--surface); border: 1px solid var(--line); }
 .butler-card::before { content: none; }
 .butler-card::after { content: none; }
 .bc-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 110px; align-items: center; gap: 12px; margin-bottom: 16px; min-height: 132px; }
@@ -188,7 +188,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 
 .observe-card { background: var(--surface); border-radius: 20px; padding: 18px; box-shadow: var(--shadow-sm); display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
 .observe-card .oc-ico { width: 40px; height: 40px; border-radius: 50%; background: var(--mint); display: grid; place-items: center; color: var(--teal-d); flex-shrink: 0; }
-.observe-card .oc-text { font-size: 15px; line-height: 1.7; color: var(--ink-2); }
+.observe-card .oc-text { font-size: 17px; line-height: 1.7; color: var(--ink-2); }
 .observe-card .oc-text b { color: var(--ink); }
 
 .report-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px; border: 1.5px solid var(--teal); background: #fff; color: var(--teal-d); border-radius: var(--radius-sm); font-family: var(--display); font-weight: 700; font-size: 16px; cursor: pointer; }
@@ -325,7 +325,6 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .quest-card .qc-kicker .ic { width: 16px; height: 16px; }
 .quest-card .qc-goal { font-family: var(--serif); font-size: 19px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
 .quest-card .qc-bar { display: none; }
-.quest-card 
 .quest-card .qc-num { font-size: 13.5px; color: var(--muted); } .qc-num b { color: var(--coral-d); font-weight: 700; }
 .quest-card .qc-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; position: relative; }
 .quest-card .qc-members { display: flex; }
@@ -339,10 +338,9 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .react-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 11px 4px; border: none; background: var(--mint); border-radius: 14px; cursor: pointer; font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--teal-dd); transition: transform .15s, background .2s; }
 .react-btn:active { transform: scale(.92); }
 .react-btn.sent { background: #D29F3E; color: #fff; }
-.react-btn .re-emoji { font-size: 21px; }
-
+.react-btn 
 /* 狀態頁數據來源輕量條（連接動作移到設定頁） */
-.src-strip { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-2); background: var(--mint); border-radius: 14px; padding: 11px 14px; margin-bottom: 16px; line-height: 1.45; }
+.src-strip { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink-2); background: var(--mint); border-radius: 14px; padding: 11px 14px; margin-bottom: 16px; line-height: 1.45; }
 .src-strip .ic { width: 17px; height: 17px; color: var(--teal-d); flex-shrink: 0; }
 .src-strip b { color: var(--teal-dd); font-weight: 600; }
 
@@ -620,7 +618,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
   width: max-content; max-width: calc(100% - 48px);
   background: rgba(8,18,15,.58); backdrop-filter: blur(14px);
   color: rgba(255,255,255,.92); font-family: var(--sans); font-weight: 700;
-  font-size: 15px; line-height: 1.35; text-align: center;
+  font-size: 16.5px; line-height: 1.35; text-align: center;
   padding: 10px 15px; border-radius: 999px;
   border: 1px solid rgba(255,255,255,.12);
   box-shadow: 0 14px 30px -18px rgba(0,0,0,.62);
@@ -796,6 +794,8 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 .hr-mood.m-good { color: #9A6E14; }
 .hr-mood.m-calm { color: #1E7169; }
 .hr-mood.m-tired { color: #5F6A61; }
+.hr-mood.m-sad { color: #3F5F80; }
+.hr-mood.m-upset { color: #6E4488; }
 
 /* ===== 今天一起完成：時間軸巧思 ===== */
 .task-card { position: relative; }

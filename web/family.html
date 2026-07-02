@@ -18,7 +18,7 @@
     .relay-head .rh-ico { width:40px; height:40px; border-radius:13px; background:var(--mint); display:grid; place-items:center; color:var(--teal-d); flex-shrink:0; }
     .relay-input { width:100%; border:1.5px solid var(--line); border-radius:14px; padding:13px 14px; font-family:var(--sans); font-size:16px; color:var(--ink); resize:none; background:#fff; box-sizing:border-box; }
     .relay-input:focus { outline:none; border-color:var(--teal); }
-    .relay-send { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:15px; margin-top:12px; border:none; border-radius:var(--radius-sm); background:linear-gradient(135deg,var(--teal),var(--teal-d)); color:#fff; font-family:var(--display); font-weight:700; font-size:17px; box-shadow:0 12px 24px -12px rgba(58,168,160,.7); cursor:pointer; }
+    .relay-send { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:15px; margin-top:12px; border:none; border-radius:var(--radius-sm); background:var(--teal-d); color:#fff; font-family:var(--display); font-weight:700; font-size:17px; box-shadow:0 12px 24px -12px rgba(58,168,160,.7); cursor:pointer; }
     .relay-hint { font-size:13px; color:var(--muted); margin-top:9px; text-align:center; }
     .relay-sent { display:none; align-items:center; gap:8px; justify-content:center; color:var(--teal-d); font-weight:600; font-size:15px; margin-top:12px; }
     .relay-sent.show { display:flex; }
@@ -43,7 +43,7 @@
     .pts-num{font-family:var(--display);font-weight:800;font-size:20px;color:var(--ink)}
     .pts-lbl{font-size:11.5px;color:var(--ink-2);margin-top:2px;line-height:1.4}
     .pts-bar{height:7px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden;margin-top:9px}
-    .pts-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--teal-d))}
+    .pts-bar i{display:block;height:100%;background:var(--teal-d)}
     .pack-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
     .pack{border:1.5px solid var(--line);border-radius:14px;padding:11px;text-align:center;cursor:pointer;transition:.15s;background:#fff}
     .pack:hover,.pack.on{border-color:var(--teal);background:var(--mint)}
@@ -56,11 +56,6 @@
 <body>
 <div class="app-shell">
 
-  <div class="status-bar"><span>9:41</span><span class="notch"></span><span class="sb-icons">
-    <svg class="ic" viewBox="0 0 24 24"><path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8"/></svg>
-    <svg class="ic" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14 0M8.5 16.4a6 6 0 0 1 7 0M12 20h.01"/></svg>
-    <svg class="ic" viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
-  </span></div>
 
   <section class="screen active">
     <div class="pad">
