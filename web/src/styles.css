@@ -341,7 +341,6 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .react-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 11px 4px; border: none; background: var(--mint); border-radius: 14px; cursor: pointer; font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--teal-dd); transition: transform .15s, background .2s; }
 .react-btn:active { transform: scale(.92); }
 .react-btn.sent { background: #D29F3E; color: #fff; }
-.react-btn 
 /* 狀態頁數據來源輕量條（連接動作移到設定頁） */
 .src-strip { display: flex; align-items: center; gap: 12px; background: var(--mint); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; color: var(--ink-2); line-height: 1.55; margin-bottom: 16px; }
 .src-strip .ic { width: 17px; height: 17px; color: var(--teal-d); flex-shrink: 0; }
@@ -941,3 +940,5 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 .nav-back .ic { width: 24px; height: 24px; stroke-width: 2.2; }
 .nav-back:active { background: var(--mint); }
 .nav-title { text-align: center; font-size: 17px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.chal-input:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(58,168,160,.18); }

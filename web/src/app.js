@@ -340,12 +340,12 @@ function syncCompanionUI() {
   avatarRuntime.setCharacter(display, currentAvatarId);
   renderAiDiagnostics();
 }
-function setCompanionName(name) {
+function setCompanionName(name, opts) {
   companionDisplayName = (name || '').slice(0, 12);
   companionNameTouched = companionDisplayName.trim().length > 0;
   persistCompanionProfile();
   syncCompanionUI();
-  saveCompanionProfileToBackend();
+  if (!(opts && opts.skipBackend)) saveCompanionProfileToBackend();
 }
 function setCompanionTemplate(avatarId) {
   const templateId = CompanionProfile.normalizeTemplateId(avatarId);
@@ -708,7 +708,12 @@ function setCallToggle(connected) {
 
 async function enterChat() {
   setCallToggle(false);
-  setCaption('按綠色按鈕開始通話', '');
+  const box = document.querySelector('.face-caption-box');
+  if (box) box.style.display = 'none';
+  setFaceState('idle');
+}
+
+async function openVoiceSession() {
   if (chatOpened) return;
   chatOpened = true;
   activeChatSessionId = makeSessionId('voice');
@@ -737,7 +742,9 @@ async function enterChat() {
 function completeChatSession(reason = 'ended') {
   if (_callSec > 3) {
     const mins = Math.max(1, Math.round(_callSec / 60));
-    toast(`這通聊了 ${mins} 分鐘 · 用了 ${mins * 10} 點（剩 ${480 - mins * 10} 點）`);
+    POINTS.used = Math.min(POINTS.total, POINTS.used + mins * 10);
+    renderPoints();
+    toast('今天聊得真開心，下次見！');
   }
   stopCallTimer();
   if (!activeChatSessionId || !activeChatStartedAt) return;
@@ -754,6 +761,7 @@ function completeChatSession(reason = 'ended') {
 }
 
 function showView(id) {
+  const t = $('#toast'); if (t) t.classList.remove('show');
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   setTimeout(refreshHscrollHints, 60); // 分頁切換後重算「右邊還有」提示
   const overlay = OVERLAYS.includes(id);
@@ -881,6 +889,14 @@ function setupAuthControls() {
 (function homeGreeting() {
   const now = new Date();
   const h = now.getHours();
+  const dayN = Math.max(1, now.getDate() - 1);
+  const ws = $('#wsText');
+  if (ws) ws.innerHTML = `這個月你有 <b>${dayN} 天</b>準時吃藥，很穩，繼續保持。`;
+  const chip = $('#bcChip');
+  if (chip) {
+    const night = h >= 18 || h < 5;
+    chip.innerHTML = chip.querySelector('svg').outerHTML + (night ? '泡杯熱茶吧' : '適合散步');
+  }
   const wd = ['日','一','二','三','四','五','六'][now.getDay()];
   const meta = $('#metaDate');
   if (meta) meta.textContent = `${now.getMonth() + 1}/${now.getDate()} 週${wd}`;
@@ -894,6 +910,16 @@ function setupAuthControls() {
   if (kick) kick.textContent = k;
   if (big) big.textContent = b;
 })();
+
+const POINTS = { total: 800, used: 320 };
+function renderPoints() {
+  const left = POINTS.total - POINTS.used;
+  const hud = document.querySelector('.hud-pill.pts');
+  if (hud) hud.textContent = '剩 ' + left + ' 點';
+  if ($('#ptsLeft')) $('#ptsLeft').textContent = left;
+  if ($('#ptsUsed')) $('#ptsUsed').textContent = POINTS.used;
+  if ($('#ptsBar')) $('#ptsBar').style.width = Math.round(POINTS.used / POINTS.total * 100) + '%';
+}
 
 let _callTimerInt = null, _callSec = 0;
 function startCallTimer() {
@@ -1060,12 +1086,17 @@ function setupHscrollHints() {
 function connectCall() {
   setCallToggle(true);
   startCallTimer();
-  setCaption('接通了，直接說話就可以', '想到什麼就說，寧寧聽得到');
+  const capOff = $('#captionToggle') && $('#captionToggle').classList.contains('off');
+  const box = document.querySelector('.face-caption-box');
+  if (box) box.style.display = capOff ? 'none' : '';
+  setCaption('接通了——按一下麥克風跟我說話', '講完再按一次，寧寧就會回你');
+  openVoiceSession();
 }
 
 function init() {
   syncCompanionUI();
   setupHscrollHints();
+  renderPoints();
   if ($('#callToggle')) $('#callToggle').addEventListener('click', () => {
     if (!callConnected) { connectCall(); }
     else { completeChatSession('user_ended'); chatOpened = false; setCallToggle(false); showView('home'); }
@@ -1137,15 +1168,48 @@ function init() {
     b.classList.add('sent');
     say(`好，寧寧會幫你轉達——你${b.dataset.react}。`);
     const who = document.getElementById('ptName')?.textContent || '家人';
-    pushFamilyFeed(`<b>你</b>剛剛給${who}${b.dataset.react || '送上心意'}——寧寧下次聊天會親口告訴${who === '阿嬤' ? '她' : 'TA'}`);
+    pushFamilyFeed(`<b>你</b>剛剛給${who}${b.dataset.react || '送上心意'}——寧寧下次聊天會親口告訴${['阿嬤','美華'].includes(who) ? '她' : '他'}`);
   });
 
   // 全家健康圈：切換成員看健康
+  const PERSON_STATS = {
+    '阿嬤': [
+      { ic: 'bp', val: '128/82', label: '血壓 · 已量' },
+      { ic: 'walk', val: '3,850<small> 步</small>', label: '今日活動' },
+      { ic: 'sleep', val: '7.5<small> 小時</small>', label: '昨晚睡眠' },
+      { ic: 'pill', val: '2<small>/3</small>', label: '今天用藥' }],
+    '美華': [
+      { ic: 'walk', val: '8,900<small> 步</small>', label: '今日活動' },
+      { ic: 'sleep', val: '6.2<small> 小時</small>', label: '昨晚睡眠（偏少）' }],
+    '志明': [
+      { ic: 'walk', val: '7,400<small> 步</small>', label: '今日活動' },
+      { ic: 'sleep', val: '7.1<small> 小時</small>', label: '昨晚睡眠' }],
+    '小寶': [
+      { ic: 'walk', val: '11,200<small> 步</small>', label: '今日活動' },
+      { ic: 'sleep', val: '8.8<small> 小時</small>', label: '昨晚睡眠' }],
+  };
+  const STAT_ICONS = {
+    bp: '<path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/><path d="M3.2 12H9l.5-1 2 4.5 2-7 1.5 3.5h5.3"/>',
+    walk: '<path d="M4 16v-2.4c0-2.1-1-3.1-1-5.6 0-2.7 1.5-6 4.5-6C9.4 2 10 3.8 10 5.5c0 3.1-2 5.7-2 8.7V16a2 2 0 1 1-4 0Z"/><path d="M20 20v-2.4c0-2.1 1-3.1 1-5.6 0-2.7-1.5-6-4.5-6C14.6 6 14 7.8 14 9.5c0 3.1 2 5.7 2 8.7V20a2 2 0 1 0 4 0Z"/>',
+    sleep: '<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>',
+    pill: '<path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7z"/><path d="M8.5 8.5l7 7"/>',
+  };
+  function renderPersonStats(p) {
+    const grid = $('#personGrid');
+    if (!grid) return;
+    const stats = PERSON_STATS[p] || PERSON_STATS['阿嬤'];
+    grid.innerHTML = stats.map(t =>
+      '<div class="stat-tile"><span class="st-ico"><svg class="ic" viewBox="0 0 24 24">' + STAT_ICONS[t.ic] + '</svg></span>' +
+      '<div class="st-val">' + t.val + '</div><div class="st-label">' + t.label + '</div></div>').join('');
+  }
+
   function showFamPerson(p, rel, init, tint) {
     $('#viewAll').classList.remove('active');
     $('#viewPerson').classList.add('active');
     if ($('#ptName')) $('#ptName').textContent = p;
     if ($('#personNavTitle')) $('#personNavTitle').textContent = p;
+    renderPersonStats(p);
+    if ($('#moodToday')) $('#moodToday').style.display = (p === '阿嬤') ? '' : 'none';
     if ($('#ptRel')) $('#ptRel').textContent = rel || '';
     const pa = $('#ptAv');
     if (pa) { pa.textContent = init || (p || '')[0] || ''; pa.className = 'init-ava init-ava-lg ' + (tint || ''); }
@@ -1225,6 +1289,7 @@ function init() {
     const typeName = kind === 'event' ? (evName || '家庭聚會') : (type ? type.textContent.trim() : '挑戰');
     const ons = $$('#inviteList .invite-item.on');
     const names = ons.map(x => (x.querySelector('.iv-name')?.childNodes[0]?.textContent || '').trim()).filter(Boolean);
+    if (!names.length) { toast('先選至少一位家人一起'); return; }
     closeChal();
     const list = document.querySelector('#newChalBtn')?.closest('.pad')?.querySelector('.quest-card');
     if (list && names.length) {
@@ -1402,10 +1467,11 @@ function init() {
   // 陪伴角色：使用者命名與模板分離
   const companionNameInput = $('#companionNameInput');
   if (companionNameInput) {
-    companionNameInput.addEventListener('input', e => setCompanionName(e.target.value));
+    companionNameInput.addEventListener('input', e => setCompanionName(e.target.value, { skipBackend: true }));
     companionNameInput.addEventListener('blur', () => {
       if (!companionDisplayName.trim()) companionDisplayName = templateFor().defaultName;
       companionNameTouched = companionDisplayName.trim().length > 0;
+      saveCompanionProfileToBackend();
       persistCompanionProfile();
       syncCompanionUI();
       saveCompanionProfileToBackend();
