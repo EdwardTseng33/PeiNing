@@ -39,7 +39,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
 .status-bar .sb-icons .ic { width: 17px; height: 17px; stroke-width: 2.2; }
 .status-bar.on-dark { color: #fff; }
 
-.screen { display: none; height: 100%; overflow-y: auto; padding-top: calc(env(safe-area-inset-top, 0px) + 6px); padding-bottom: calc(114px + env(safe-area-inset-bottom)); }
+.screen { display: none; height: 100%; overflow-y: auto; padding-top: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 6px); padding-bottom: calc(114px + env(safe-area-inset-bottom)); }
 .screen.active { display: block; animation: fade .35s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
 .pad { padding: 4px 20px 16px; }
@@ -698,7 +698,7 @@ body { font-family: var(--sans); background: #EFE9DD; color: var(--ink); -webkit
   padding: 6px 0;
   border-radius: 100px;
   font-family: var(--sans);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: background .18s ease, color .18s ease, transform .12s ease;
@@ -839,3 +839,11 @@ button, .task-item, .health-row, .fam-switch-item, .stat-tile, .react-btn,
 .qc-rsvp .yes { background: var(--mint); color: var(--teal-dd); }
 .qc-rsvp .no { background: #F1EFE8; color: var(--muted); }
 .qc-rsvp .wait { background: var(--coral-soft); color: var(--coral-d); }
+
+/* 捲動邊緣淡出（Apple 2026 scroll-edge 的不透明版） */
+.app-shell::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top, 0px) + 18px); background: linear-gradient(to bottom, var(--cream) 30%, transparent); pointer-events: none; z-index: 15; }
+.app-shell::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: calc(env(safe-area-inset-bottom, 0px) + 96px); background: linear-gradient(to top, var(--cream) 12%, transparent 60%); pointer-events: none; z-index: 15; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
