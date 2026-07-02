@@ -151,3 +151,9 @@
 - 本輪範圍：新增 `docs/STAGING-BACKEND-RUNBOOK-2026-07-02.md`，把第一個 hosted staging API 的環境變數、Supabase gate、Hosted smoke、TestFlight backend 策略、go/no-go 與 rollback 寫成交接 runbook。
 - 已同步文件：`docs/PRODUCTION-INFRA-READINESS-2026-07-02.md`、`STATUS.md`。
 - 避讓範圍：未改 `web/`、`supabase/sql/`、`engine/server.py`、`engine/perception_engine.py`、`engine/memory_engine.py`、`engine/chat_engine.py`、即時語音檔；不干擾 Claude/城堡的記憶、感知、互動、web retheme 與 family schema 協調。
+
+## 同步紀錄（2026-07-02 · Codex · Hosted staging smoke）
+
+- 本輪範圍：新增 `scripts/staging-smoke.ps1` 與 `npm run smoke:staging`，讓未來 hosted staging API 可直接驗 `/healthz`、auth-required、未登入拒絕、invalid bearer、Bearer session、admin token、provider webhook token。
+- 已同步文件：`docs/STAGING-BACKEND-RUNBOOK-2026-07-02.md`、`docs/PRODUCTION-INFRA-READINESS-2026-07-02.md`、`STATUS.md`。
+- 避讓範圍：未改 `web/`、`supabase/sql/`、`engine/server.py`、`engine/perception_engine.py`、`engine/memory_engine.py`、`engine/chat_engine.py`、即時語音檔；只推上線驗證工具，不干擾 Claude/城堡主線。

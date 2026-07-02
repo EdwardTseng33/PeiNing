@@ -112,7 +112,27 @@ Once staging is deployed, the minimum hosted checks are:
 Current repo gap:
 
 - `npm run smoke:auth` is local-only and uses developer bearer bypass for deterministic CI.
-- A future `smoke:staging` script should test the public staging URL with real Supabase Auth.
+- `npm run smoke:staging` tests a deployed API URL without starting a local server.
+
+Run without secrets first:
+
+```powershell
+npm run smoke:staging -- -BaseUrl https://YOUR-STAGING-API.example.com
+```
+
+This verifies `/healthz`, unauthenticated rejection, invalid bearer rejection, admin rejection, and provider webhook rejection.
+
+Run with real staging credentials when available:
+
+```powershell
+npm run smoke:staging -- `
+  -BaseUrl https://YOUR-STAGING-API.example.com `
+  -BearerToken "<REAL_SUPABASE_ACCESS_TOKEN>" `
+  -AdminToken "<STAGING_ADMIN_TOKEN>" `
+  -ProviderToken "<STAGING_PROVIDER_TOKEN>"
+```
+
+The script does not print tokens. For non-local URLs it requires HTTPS and requires `/healthz` to report `runtime.authRequired=true` and a non-JSON backend.
 
 ## TestFlight Backend Strategy
 
@@ -158,5 +178,5 @@ Do not "rollback" by sending real testers to local JSON fallback. JSON fallback 
 2. Add backend hosting secrets using the minimum environment contract above.
 3. Apply approved Supabase SQL to the staging project.
 4. Run live Supabase doctor.
-5. Add a hosted staging smoke script after real Supabase Auth is available.
+5. Run `npm run smoke:staging` against the hosted staging API.
 6. Decide first TestFlight mode: static shell QA or staging-connected QA.

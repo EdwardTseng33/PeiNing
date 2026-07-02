@@ -31,6 +31,7 @@ New handoff:
 
 - Staging backend runbook: `docs/STAGING-BACKEND-RUNBOOK-2026-07-02.md`.
 - It defines the minimum hosted backend contract, required staging env, Supabase gate, TestFlight backend strategy, hosted smoke expectations, and rollback plan.
+- Hosted staging smoke: `npm run smoke:staging -- -BaseUrl https://YOUR-STAGING-API.example.com`.
 
 ## What Can Move Now Without Overlap
 
@@ -85,6 +86,7 @@ First backend-connected TestFlight should only happen after:
 3. `npm run supabase:doctor:live` passes against staging secrets.
 4. Hosted `GET /healthz` returns `ok:true` over HTTPS.
 5. Real Supabase Auth session verification is tested against `/auth-status`.
+6. `npm run smoke:staging` passes against the hosted API.
 
 ### 3. Supabase Live Gate
 

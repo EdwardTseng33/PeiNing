@@ -1,5 +1,14 @@
 # 沐寧 Munea · STATUS（接力檔）
 
+## 2026-07-02 Update - Hosted staging smoke
+
+**Status:** completed for staging backend verification.
+
+- Added `scripts/staging-smoke.ps1` and `npm run smoke:staging`.
+- The script checks a deployed API URL without starting a local server: `/healthz`, auth-required mode, unauthenticated rejection, invalid bearer rejection, optional real bearer session checks, optional admin token checks, and optional provider webhook checks.
+- Updated the staging backend runbook and infrastructure readiness map so the first hosted backend can be verified by command instead of manual probing.
+- Avoided `web/`, `supabase/sql/`, memory logic, perception logic, realtime voice files, and broad backend behavior changes.
+
 ## 2026-07-02 Update - Staging backend runbook
 
 **Status:** completed for the non-overlapping infrastructure lane.
